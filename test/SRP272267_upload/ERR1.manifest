@@ -1,0 +1,10 @@
+STUDY	PRJ1
+SAMPLE	SAMEXXXXX
+RUN_REF	ERR1
+ASSEMBLYNAME	ERR1_d41d8cd98f00b204e9800998ecf8427e
+ASSEMBLY_TYPE	primary metagenome
+COVERAGE	20.0
+PROGRAM	metaSPADES v3.12.1
+PLATFORM	Illumina XXX
+FASTA	/Users/vkale/Downloads/pipelines/assembly_upload/ERR1.fasta.gz
+TPA	true
