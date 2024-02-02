@@ -46,6 +46,7 @@ class AssemblyManifest:
         self.upload_dir = os.path.join(os.getcwd(), f'{self.study}_upload')
         self.filename = self.args.filename
         self.force = self.args.force
+        self.assemblies_dir = self.args.assemblies_dir
         if not os.path.exists(self.upload_dir):
             os.makedirs(self.upload_dir)
 
@@ -53,7 +54,7 @@ class AssemblyManifest:
                           assembler_version):
         logging.info('Writing manifest for ' + run_id)
         assembly_file = run_id + self.filename
-        assembly_path = os.path.join(os.getcwd(), assembly_file)
+        assembly_path = os.path.join(self.assemblies_dir, assembly_file)
         if not os.path.exists(assembly_path):
             logging.error(f'Assembly path {assembly_path} does not exist. Skipping manifest for run {run_id}')
             return
