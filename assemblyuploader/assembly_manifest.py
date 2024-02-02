@@ -44,6 +44,7 @@ class AssemblyManifest:
         if not os.path.exists(self.upload_dir):
             os.mkdir(self.upload_dir)
         self.force = self.args.force
+        self.assemblies_dir = self.args.assemblies_dir
         if not os.path.exists(self.upload_dir):
             os.makedirs(self.upload_dir)
 
