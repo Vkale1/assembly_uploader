@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <PROJECT_SET>
-	<PROJECT alias="PRJNA646656_assembly_new" center_name="EMG">
+	<PROJECT alias="PRJNA646656_assembly_new7" center_name="EMG">
 		<TITLE>metagenome assembly of PRJNA646656 data set (Metagenomic data reveal diverse fungal and algal communities associated with the lichen symbiosis).</TITLE>
 		<DESCRIPTION>The Third Party Annotation (TPA) assembly was derived from the primary data set PRJNA646656.</DESCRIPTION>
 		<SUBMISSION_PROJECT>

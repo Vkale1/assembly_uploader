@@ -32,6 +32,7 @@ def parse_args(argv):
                                                  'Must exist in the webin account', required=False)
     parser.add_argument('--assemblies_dir', help='a directory containing assembly files. Current working directory '
                                                  'is used as default', required=False, default=os.getcwd())
+    parser.add_argument('--filename', help='suffix for assembly files', required=False, default='.fasta.gz')
     parser.add_argument('--force', help='overwrite all existing manifests', required=False, action='store_true')
     return parser.parse_args(argv)
 
@@ -43,6 +44,7 @@ class AssemblyManifest:
         self.metadata = parse_info(self.args.data)
         self.new_project = self.args.assembly_study
         self.upload_dir = os.path.join(os.getcwd(), f'{self.study}_upload')
+        self.filename = self.args.filename
         self.force = self.args.force
         if not os.path.exists(self.upload_dir):
             os.makedirs(self.upload_dir)
@@ -50,7 +52,7 @@ class AssemblyManifest:
     def generate_manifest(self, new_project_id, upload_dir, run_id, sample, sequencer, coverage, assembler,
                           assembler_version):
         logging.info('Writing manifest for ' + run_id)
-        assembly_file = run_id + '.fasta.gz'
+        assembly_file = run_id + self.filename
         assembly_path = os.path.join(os.getcwd(), assembly_file)
         if not os.path.exists(assembly_path):
             logging.error(f'Assembly path {assembly_path} does not exist. Skipping manifest for run {run_id}')

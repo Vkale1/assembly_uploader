@@ -53,6 +53,7 @@ def project_submission(study_id, directory=None):  # noqa: C901
 
     submission_report = requests.post(DROPBOX_DEV, files=files, auth=(WEBIN_USERNAME, WEBIN_PASSWORD))
     receipt_xml_str = submission_report.content.decode("utf-8")
+    print(receipt_xml_str)
 
     if 'success="true"' in receipt_xml_str:
         primary_accession = parse_success_study_acc(receipt_xml_str)

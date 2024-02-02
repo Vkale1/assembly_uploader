@@ -1,6 +1,8 @@
 # assembly_uploader
 Upload of metagenome and metatranscriptome assemblies to ENA
 
+This is currently running upload to the dev version of ENA
+
 Prerequisites:
 - Environment with python3
 - CSV metadata file. One per study. See test/test_metadata for an example.
@@ -33,5 +35,5 @@ submit_study.py --study READS_STUDY_ID (optional if you have moved the XMLs abov
 
 This step will generate manifest files in the folder STUDY_UPLOAD for runs specified in the metadata file:
 ```
-assembly_manifest.py --study READS_STUDY_ID --data METADATA_CSV --assembly_study ASSEMBLY_STUDY_ID --assemblies-dir PATH_TO_ASSEMBLY_FILES (optional overwrites existing manifests --force)
+assembly_manifest.py --study READS_STUDY_ID --data METADATA_CSV --assembly_study ASSEMBLY_STUDY_ID --assemblies-dir PATH_TO_ASSEMBLY_FILES --filename ASSEMBLY_FILE_SUFFIX (--force optional overwrites existing manifests) 
 ```
