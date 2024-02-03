@@ -1,0 +1,47 @@
+[project]
+name = "assemblyuploader"
+readme = "README.md"
+authors = [
+  {name = "MGnify team", email = "metagenomics-help@ebi.ac.uk"},
+]
+license = {text = "Apache Software License 2.0"}
+keywords = ["bioinformatics", "tool", "metagenomics"]
+dynamic = ["version"]
+description = "Python scripts to upload primary metagenome and metatranscriptome assemblies to ENA on a per-study basis. This script generates xmls to register a new study and create manifests necessary for submission with webin-cli."
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "requests==2.26.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["assemblyuploader"]
+
+[tool.setuptools.dynamic]
+version = {attr = "assemblyuploder.__version__"}
+
+[project.scripts]
+study_xmls = "assemblyuploader.study_xmls:main"
+submit_study = "assembluploader.submit_study:main"
+assembly_manifest = "assemblyuploader.assembly_manifest:main"
+
+[project.optional-dependencies]
+tests = [
+    "pytest==7.4.0",
+    "pytest-md==0.2.0",
+    "pytest-workflow==2.0.1",
+]
