@@ -41,6 +41,8 @@ class AssemblyManifest:
         self.metadata = parse_info(self.args.data)
         self.new_project = self.args.assembly_study
         self.upload_dir = os.path.join(os.getcwd(), f'{self.study}_upload')
+        if not os.path.exists(self.upload_dir):
+            os.mkdir(self.upload_dir)
         self.force = self.args.force
         if not os.path.exists(self.upload_dir):
             os.makedirs(self.upload_dir)
