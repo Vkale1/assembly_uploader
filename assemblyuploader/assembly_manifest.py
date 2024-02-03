@@ -4,7 +4,7 @@ import sys
 import argparse
 import logging
 import csv
-from ena_queries import EnaQuery
+from .ena_queries import EnaQuery
 
 logging.basicConfig(level=logging.INFO)
 
@@ -27,13 +27,10 @@ def parse_args(argv):
     parser = argparse.ArgumentParser(
         description="independent to directory structure")
     parser.add_argument('--study', help='raw reads study ID', required=True)
-    parser.add_argument('--data', help='tab separated file format - run_id, coverage, assembler, version')
+    parser.add_argument('--data', help='metadata CSV - run_id, coverage, assembler, version, filepath')
     parser.add_argument('--assembly_study', help='pre-existing study ID to submit to if available. '
                                                  'Must exist in the webin account', required=False)
     parser.add_argument('--force', help='overwrite all existing manifests', required=False, action='store_true')
-
-    filenames = parser.add_mutually_exclusive_group(required=True)
-    filenames.add_argument('--filename', help='suffix for assembly files', required=False, default='.fasta.gz')
     return parser.parse_args(argv)
 
 

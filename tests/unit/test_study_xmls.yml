@@ -1,9 +1,9 @@
 - name: study_xmls test_correct_args
   tags:
     - study_xmls
-  command: python -m assemblyuploader.study_xmls --study SRP272267 --library metagenome --center EMG --tpa True
+  command: python -m assemblyuploader.study_xmls --study SRP272267 --library metagenome --center EMG --tpa
   files:
     - path: "SRP272267_upload/SRP272267_submission.xml"
       md5sum: bdae52720209d2e70e2911c650a64901
     - path: "SRP272267_upload/SRP272267_reg.xml"
-      md5sum: 06c12c537f676db67dc1566281c67a59
+      md5sum: d2c815fd6ad33847465e55ca5945f0ba

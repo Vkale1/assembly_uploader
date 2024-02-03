@@ -89,8 +89,8 @@ class EnaQuery:
             )
         else:
             logging.warning(
-                "Not authenticated, fetching public data... kill job and set env vars ENA_API_USER and ENA_API_"
-                "PASSWORD to access private data."
+                "Not authenticated, fetching public data... check WEBIN_USERNAME and WEBIN_PASSWORD are set in your "
+                "environment to access private data."
             )
             response = requests.post(
                 self.url, data=self.data, **get_default_connection_headers()
