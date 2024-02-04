@@ -18,12 +18,10 @@ export WEBIN_PASSWORD=password
 ```
 
 ## Register study and generate pre-upload files - change this to python package installation instead?
-The script needs `python`, `requests`, and `ena-webin-cli` to run. We provide a yaml file for the generation of a conda environment:
+The script needs `python`, `requests`, and `ena-webin-cli` to run. Install the package:
 
 ```bash
-# Create environment and install requirements
-conda env create -f requirements.yml
-conda activate assemblyuploader
+python3 -m pip install -i https://test.pypi.org/simple/ --no-deps assemblyuploader==0.0.0
 ```
 
 **If you already have a registered study accession for your assembly files skip to step 3.**
