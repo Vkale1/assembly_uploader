@@ -74,8 +74,8 @@ class EnaQuery:
         self.url = ENA_API_URL
         self.accession = accession
         self.acc_type = parse_accession(accession)
-        username = username or os.getenv("WEBIN_USERNAME")
-        password = password or os.getenv("WEBIN_PASSWORD")
+        username = username or os.getenv("ENA_WEBIN")
+        password = password or os.getenv("ENA_WEBIN_PASSWORD")
         if username and password:
             self.auth = (username, password)
         else:
