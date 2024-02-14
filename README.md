@@ -7,14 +7,14 @@ Pre-requisites:
 
 Set the following environmental variables with your webin details:
 
-WEBIN_USERNAME
+ENA_WEBIN
 ```
-export WEBIN_USERNAME=Webin-0000
+export ENA_WEBIN=Webin-0000
 ```
 
-WEBIN_PASSWORD
+ENA_WEBIN_PASSWORD
 ```
-export WEBIN_PASSWORD=password
+export ENA_WEBIN_PASSWORD=password
 ```
 
 ## Register study and generate pre-upload files - change this to python package installation instead?
@@ -68,8 +68,8 @@ A live execution example within this repo is the following:
 ena-webin-cli \
   -context=genome \
   -manifest=SRR12240187.manifest \
-  -userName=$WEBIN_USERNAME \
-  -password=$WEBIN_PASSWORD \
+  -userName=$ENA_WEBIN \
+  -password=$ENA_WEBIN_PASSWORD \
   -submit
 ```
 
