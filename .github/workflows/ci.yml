@@ -24,7 +24,7 @@ jobs:
         activate-environment: assemblyuploader
 
     - name: Install the webcli
-      run: conda install ena-webin-cli
+      run: conda install -c bioconda ena-webin-cli
 
     - name: Install additional packages
       run: pip install .[test]
