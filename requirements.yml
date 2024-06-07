@@ -3,5 +3,4 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - requests=2.26.0
   - ena-webin-cli

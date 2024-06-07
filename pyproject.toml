@@ -13,6 +13,7 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
@@ -21,8 +22,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "requests==2.26.0",
-    "ena-webin-cli"
+    "requests==2.32.3"
 ]
 
 [build-system]
@@ -38,8 +38,8 @@ submit_study = "assembluploader.submit_study:main"
 assembly_manifest = "assemblyuploader.assembly_manifest:main"
 
 [project.optional-dependencies]
-tests = [
-    "pytest==7.4.0",
+test = [
+    "pytest==8.2.2",
     "pytest-md==0.2.0",
-    "pytest-workflow==2.0.1",
+    "pytest-workflow==2.1.0",
 ]
