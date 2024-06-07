@@ -69,7 +69,7 @@ class AssemblyManifest:
         manifest_path = os.path.join(self.upload_dir, f'{run_id}.manifest')
         #   skip existing manifests
         if os.path.exists(manifest_path) and not self.force:
-            logging.error(f'Manifest for {run_id} already exists at {manifest_path}. Skipping')
+            logging.warning(f'Manifest for {run_id} already exists at {manifest_path}. Skipping')
             return
         values = (
             ('STUDY', self.new_project),
