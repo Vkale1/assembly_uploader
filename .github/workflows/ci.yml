@@ -31,7 +31,6 @@ jobs:
 
     - name: Run pytest
       run: |
-        conda activate assemblyuploader
         pytest
       env:
         PYTHONPATH: .
