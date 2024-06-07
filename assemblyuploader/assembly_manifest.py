@@ -4,7 +4,7 @@ import sys
 import argparse
 import logging
 import csv
-from ena_queries import EnaQuery
+from .ena_queries import EnaQuery
 
 logging.basicConfig(level=logging.INFO)
 
@@ -27,12 +27,9 @@ def parse_args(argv):
     parser = argparse.ArgumentParser(
         description="independent to directory structure")
     parser.add_argument('--study', help='raw reads study ID', required=True)
-    parser.add_argument('--data', help='tab separated file format - run_id, coverage, assembler, version')
+    parser.add_argument('--data', help='metadata CSV - run_id, coverage, assembler, version, filepath')
     parser.add_argument('--assembly_study', help='pre-existing study ID to submit to if available. '
                                                  'Must exist in the webin account', required=False)
-    parser.add_argument('--assemblies_dir', help='a directory containing assembly files. Current working directory '
-                                                 'is used as default', required=False, default=os.getcwd())
-    parser.add_argument('--filename', help='suffix for assembly files', required=False, default='.fasta.gz')
     parser.add_argument('--force', help='overwrite all existing manifests', required=False, action='store_true')
     return parser.parse_args(argv)
 
@@ -44,23 +41,29 @@ class AssemblyManifest:
         self.metadata = parse_info(self.args.data)
         self.new_project = self.args.assembly_study
         self.upload_dir = os.path.join(os.getcwd(), f'{self.study}_upload')
-        self.filename = self.args.filename
+        if not os.path.exists(self.upload_dir):
+            os.mkdir(self.upload_dir)
         self.force = self.args.force
-        self.assemblies_dir = self.args.assemblies_dir
         if not os.path.exists(self.upload_dir):
             os.makedirs(self.upload_dir)
 
     def generate_manifest(self, new_project_id, upload_dir, run_id, sample, sequencer, coverage, assembler,
-                          assembler_version):
+                          assembler_version, assembly_path):
         logging.info('Writing manifest for ' + run_id)
-        assembly_file = run_id + self.filename
-        assembly_path = os.path.join(self.assemblies_dir, assembly_file)
+        #   sanity check assembly file provided
         if not os.path.exists(assembly_path):
             logging.error(f'Assembly path {assembly_path} does not exist. Skipping manifest for run {run_id}')
             return
+        substrings = ['fa.gz', 'fna.gz', 'fasta.gz']
+        if not any(substring in assembly_path for substring in substrings):
+            logging.error(f'Assembly file {assembly_path} is either not fasta format or not compressed for run '
+                          f'{run_id}.')
+            return
+        #   collect variables
         assembly_alias = get_md5(assembly_path)
         assembler = f'{assembler} v{assembler_version}'
         manifest_path = os.path.join(upload_dir, f'{run_id}.manifest')
+        #   skip existing manifests
         if os.path.exists(manifest_path) and not self.force:
             logging.error(f'Manifest for {run_id} already exists at {manifest_path}. Skipping')
             return
@@ -87,7 +90,8 @@ class AssemblyManifest:
             ena_query = EnaQuery(row['Run'])
             ena_metadata = ena_query.build_query()
             self.generate_manifest(self.new_project, self.upload_dir, row['Run'], ena_metadata['sample_accession'],
-                                   ena_metadata['instrument_model'], row['Coverage'], row['Assembler'], row['Version'])
+                                   ena_metadata['instrument_model'], row['Coverage'], row['Assembler'], row['Version'],
+                                   row['Filepath'])
 
 
 if __name__ == "__main__":

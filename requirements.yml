@@ -1,0 +1,6 @@
+name: assemblyuploader
+channels:
+  - bioconda
+  - defaults
+dependencies:
+  - ena-webin-cli

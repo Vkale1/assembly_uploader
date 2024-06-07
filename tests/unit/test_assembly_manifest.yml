@@ -1,0 +1,7 @@
+- name: assembly_manifest test_correct_args
+  tags:
+    - assembly_manifest
+  command: python -m assemblyuploader.assembly_manifest --study SRP272267 --data tests/fixtures/test_metadata --assembly_study PRJ1
+  files:
+    - path: "SRP272267_upload/SRR12240187.manifest"
+      md5sum: 60fcde08185b31a84389fb83b77f081d

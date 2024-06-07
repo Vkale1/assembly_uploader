@@ -74,8 +74,8 @@ class EnaQuery:
         self.url = ENA_API_URL
         self.accession = accession
         self.acc_type = parse_accession(accession)
-        username = username or os.getenv("ENA_API_USER")
-        password = password or os.getenv("ENA_API_PASSWORD")
+        username = username or os.getenv("ENA_WEBIN")
+        password = password or os.getenv("ENA_WEBIN_PASSWORD")
         if username and password:
             self.auth = (username, password)
         else:
@@ -89,7 +89,8 @@ class EnaQuery:
             )
         else:
             logging.warning(
-                "Not authenticated, set env vars ENA_API_USER and ENA_API_PASSWORD to access private data."  # noqa: E501
+                "Not authenticated, fetching public data... check WEBIN_USERNAME and WEBIN_PASSWORD are set in your "
+                "environment to access private data."
             )
             response = requests.post(
                 self.url, data=self.data, **get_default_connection_headers()

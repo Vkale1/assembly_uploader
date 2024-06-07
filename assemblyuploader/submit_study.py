@@ -14,6 +14,7 @@ def parse_args(argv):
         description="independent to directory structure")
     parser.add_argument('--study', help='raw reads study ID', required=True)
     parser.add_argument('--directory', help='directory containing study XML', required=False)
+    parser.add_argument('--test', help='run test submission only', required=False, default=False, action='store_true')
     return parser.parse_args(argv)
 
 
@@ -37,7 +38,8 @@ def parse_success_study_acc(report):
         return new_acc[0]
 
 
-def project_submission(study_id, directory=None):  # noqa: C901
+def project_submission(study_id, test=False, directory=None):
+    endpoint = DROPBOX_DEV if test else DROPBOX_PROD
     logging.info(f"Submitting study xml {study_id}")
     if directory:
         workdir = directory
@@ -51,9 +53,8 @@ def project_submission(study_id, directory=None):  # noqa: C901
         'PROJECT': open(study_xml, "rb"),
     }
 
-    submission_report = requests.post(DROPBOX_DEV, files=files, auth=(WEBIN_USERNAME, WEBIN_PASSWORD))
+    submission_report = requests.post(endpoint, files=files, auth=(ENA_WEBIN, ENA_WEBIN_PASSWORD))
     receipt_xml_str = submission_report.content.decode("utf-8")
-    print(receipt_xml_str)
 
     if 'success="true"' in receipt_xml_str:
         primary_accession = parse_success_study_acc(receipt_xml_str)
@@ -75,16 +76,16 @@ def project_submission(study_id, directory=None):  # noqa: C901
 
 if __name__ == "__main__":
     args = parse_args(sys.argv[1:])
-    if "WEBIN_PASSWORD" not in os.environ:
-        raise Exception("The variable WEBIN_PASSWORD is missing from the env.")
-    if "WEBIN_USERNAME" not in os.environ:
-        raise Exception("The variable WEBIN_USERNAME is missing from the env")
+    if "ENA_WEBIN_PASSWORD" not in os.environ:
+        raise Exception("The variable ENA_WEBIN_PASSWORD is missing from the env.")
+    if "ENA_WEBIN" not in os.environ:
+        raise Exception("The variable ENA_WEBIN is missing from the env")
 
-    WEBIN_USERNAME = os.environ.get('WEBIN_USERNAME')
-    WEBIN_PASSWORD = os.environ.get('WEBIN_PASSWORD')
+    ENA_WEBIN = os.environ.get('ENA_WEBIN')
+    ENA_WEBIN_PASSWORD = os.environ.get('ENA_WEBIN_PASSWORD')
 
     DROPBOX_DEV = "https://wwwdev.ebi.ac.uk/ena/submit/drop-box/submit"
     DROPBOX_PROD = "https://www.ebi.ac.uk/ena/submit/drop-box/submit/"
 
-    project_submission(args.study, args.directory)
+    project_submission(args.study, args.test, args.directory)
 
