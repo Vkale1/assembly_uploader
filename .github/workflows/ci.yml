@@ -20,12 +20,11 @@ jobs:
 
     - name: Set up Miniconda
       uses: conda-incubator/setup-miniconda@v3
+      with:
+        activate-environment: assemblyuploader
 
-    - name: Create environment from requirements.yml
-      run: conda env create -f requirements.yml
-
-    - name: Activate conda environment
-      run: conda activate assemblyuploader
+    - name: Install the webcli
+      run: conda install ena-webin-cli
 
     - name: Install additional packages
       run: pip install .[test]
