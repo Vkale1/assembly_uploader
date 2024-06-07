@@ -25,7 +25,7 @@ def get_md5(path_to_file):
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(
-        description="independent to directory structure")
+        description="Generate manifests for assembly uploads")
     parser.add_argument('--study', help='raw reads study ID', required=True)
     parser.add_argument('--data', help='metadata CSV - run_id, coverage, assembler, version, filepath')
     parser.add_argument('--assembly_study', help='pre-existing study ID to submit to if available. '

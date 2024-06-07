@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(
-        description="independent to directory structure")
+        description="Submit study to ENA using XML")
     parser.add_argument('--study', help='raw reads study ID', required=True)
     parser.add_argument('--directory', help='directory containing study XML', required=False)
     parser.add_argument('--test', help='run test submission only', required=False, default=False, action='store_true')

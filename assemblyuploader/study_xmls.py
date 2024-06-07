@@ -9,7 +9,7 @@ from .ena_queries import EnaQuery
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(
-        description="independent to directory structure")
+        description="Study XML generation")
     parser.add_argument('--study', help='raw reads study ID', required=True)
     parser.add_argument('--library', help='metagenome or metatranscriptome')
     parser.add_argument('--center', help='center for upload e.g. EMG')
