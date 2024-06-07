@@ -4,7 +4,7 @@ import sys
 import argparse
 import logging
 import csv
-from ena_queries import EnaQuery
+from .ena_queries import EnaQuery
 
 logging.basicConfig(level=logging.INFO)
 

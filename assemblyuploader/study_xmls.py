@@ -4,7 +4,7 @@ import argparse
 import sys
 import os
 from datetime import datetime
-from ena_queries import EnaQuery
+from .ena_queries import EnaQuery
 
 
 def parse_args(argv):
