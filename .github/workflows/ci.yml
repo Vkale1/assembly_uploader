@@ -24,10 +24,13 @@ jobs:
         activate-environment: assemblyuploader
 
     - name: Install the webcli
+      shell: bash -el {0}
       run: conda install -c bioconda ena-webin-cli
 
     - name: Install additional packages
+      shell: bash -el {0}
       run: pip install .[test]
 
     - name: Run pytest
+      shell: bash -el {0}
       run: pytest
