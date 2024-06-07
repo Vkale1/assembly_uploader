@@ -4,7 +4,7 @@ import argparse
 import sys
 import os
 from datetime import datetime
-from .ena_queries import EnaQuery
+from ena_queries import EnaQuery
 
 
 def parse_args(argv):
@@ -120,4 +120,3 @@ if __name__ == "__main__":
     study_reg = RegisterStudy()
     study_reg.write_study_xml()
     study_reg.write_submission_xml()
-

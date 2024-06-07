@@ -31,6 +31,7 @@ def parse_args(argv):
     parser.add_argument('--assembly_study', help='pre-existing study ID to submit to if available. '
                                                  'Must exist in the webin account', required=False)
     parser.add_argument('--force', help='overwrite all existing manifests', required=False, action='store_true')
+    parser.add_argument('--output-dir', help='Path to output directory', required=False)
     return parser.parse_args(argv)
 
 
@@ -40,7 +41,10 @@ class AssemblyManifest:
         self.study = self.args.study
         self.metadata = parse_info(self.args.data)
         self.new_project = self.args.assembly_study
-        self.upload_dir = os.path.join(os.getcwd(), f'{self.study}_upload')
+        if self.args.output_dir:
+            self.upload_dir = os.path.join(self.args.output_dir, f'{self.study}_upload')
+        else:
+            self.upload_dir = os.path.join(os.getcwd(), f'{self.study}_upload')
         if not os.path.exists(self.upload_dir):
             os.mkdir(self.upload_dir)
         self.force = self.args.force
