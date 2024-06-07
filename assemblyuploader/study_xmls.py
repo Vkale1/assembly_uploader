@@ -19,6 +19,7 @@ def parse_args(argv):
     parser.add_argument('--tpa', help='is the study a third party assembly. Default True', action='store_true',
                         default=True)
     parser.add_argument('--publication', help='pubmed ID for connected publication if available', required=False)
+    parser.add_argument('--output-dir', help='Path to output directory', required=False)
     return parser.parse_args(argv)
 
 
@@ -26,7 +27,10 @@ class RegisterStudy:
     def __init__(self, argv=sys.argv[1:]):
         self.args = parse_args(argv)
         self.study = self.args.study
-        self.upload_dir = os.path.join(os.getcwd(), f'{self.study}_upload')
+        if self.args.output_dir:
+            self.upload_dir = os.path.join(self.args.output_dir, f'{self.study}_upload')
+        else:
+            self.upload_dir = os.path.join(os.getcwd(), f'{self.study}_upload')
         self.study_xml_path = os.path.join(self.upload_dir, f'{self.study}_reg.xml')
         self.submission_xml_path = os.path.join(self.upload_dir, f'{self.study}_submission.xml')
         self.center = self.args.center
