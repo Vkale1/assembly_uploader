@@ -28,7 +28,7 @@ python3 -m pip install -i https://test.pypi.org/simple/ --no-deps assemblyupload
 
 Step 1. This step will generate a folder STUDY_upload and a project XML and submission XML within it:
 ```bash
-study_xmls 
+study_xmls
   --study STUDY         raw reads study ID
   --library LIBRARY     metagenome or metatranscriptome
   --center CENTER       center for upload e.g. EMG

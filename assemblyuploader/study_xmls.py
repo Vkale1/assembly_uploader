@@ -1,9 +1,10 @@
+import argparse
+import os
+import sys
 import xml.dom.minidom as minidom
 import xml.etree.ElementTree as ET
-import argparse
-import sys
-import os
 from datetime import datetime
+
 from .ena_queries import EnaQuery
 
 
@@ -106,9 +107,9 @@ class RegisterStudy:
                 project_attributes, "PROJECT_ATTRIBUTE"
             )
             ET.SubElement(project_attribute_type, "TAG").text = "new_study_type"
-            ET.SubElement(
-                project_attribute_type, "VALUE"
-            ).text = f"{self.args.library} assembly"
+            ET.SubElement(project_attribute_type, "VALUE").text = (
+                f"{self.args.library} assembly"
+            )
 
             dom = minidom.parseString(ET.tostring(project_set, encoding="utf-8"))
             study_file.write(dom.toprettyxml().encode("utf-8"))

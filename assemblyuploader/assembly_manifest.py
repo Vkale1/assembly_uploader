@@ -1,9 +1,10 @@
-import os
-import hashlib
-import sys
 import argparse
-import logging
 import csv
+import hashlib
+import logging
+import os
+import sys
+
 from .ena_queries import EnaQuery
 
 logging.basicConfig(level=logging.INFO)

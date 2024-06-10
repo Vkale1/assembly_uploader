@@ -41,8 +41,14 @@ submit_study = "assembluploader.submit_study:main"
 assembly_manifest = "assemblyuploader.assembly_manifest:main"
 
 [project.optional-dependencies]
+dev = [
+    "pre-commit==3.6.0",
+]
 test = [
     "pytest==8.2.2",
     "pytest-md==0.2.0",
     "pytest-workflow==2.1.0",
 ]
+
+[tool.isort]
+profile = "black"

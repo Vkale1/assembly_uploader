@@ -1,10 +1,11 @@
-import os
-import logging
-import requests
-import re
-import xml.etree.ElementTree as ET
 import argparse
+import logging
+import os
+import re
 import sys
+import xml.etree.ElementTree as ET
+
+import requests
 
 logging.basicConfig(level=logging.INFO)
 
