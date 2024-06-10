@@ -1,5 +1,5 @@
 [project]
-name = "assemblyuploader"
+name = "assembly_uploader"
 readme = "README.md"
 authors = [
   {name = "MGnify team", email = "metagenomics-help@ebi.ac.uk"},
@@ -30,19 +30,20 @@ requires = ["setuptools>=61.0.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
-version = {attr = "assemblyuploader.__version__"}
+version = {attr = "assembly_uploader.__version__"}
 
 [tool.setuptools]
-packages = ["assemblyuploader"]
+packages = ["assembly_uploader"]
 
 [project.scripts]
-study_xmls = "assemblyuploader.study_xmls:main"
-submit_study = "assembluploader.submit_study:main"
-assembly_manifest = "assemblyuploader.assembly_manifest:main"
+study_xmls = "assembly_uploader.study_xmls:main"
+submit_study = "assembly_uploader.submit_study:main"
+assembly_manifest = "assembly_uploader.assembly_manifest:main"
 
 [project.optional-dependencies]
 dev = [
     "pre-commit==3.6.0",
+    "black==24.4.2",
 ]
 test = [
     "pytest==8.2.2",

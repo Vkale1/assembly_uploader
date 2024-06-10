@@ -1,29 +1,34 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# Copyright 2024 EMBL - European Bioinformatics Institute
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import argparse
 import logging
 import os
 import re
-import sys
 import xml.etree.ElementTree as ET
 
 import requests
 
 logging.basicConfig(level=logging.INFO)
 
+ENA_WEBIN = os.environ.get("ENA_WEBIN")
+ENA_WEBIN_PASSWORD = os.environ.get("ENA_WEBIN_PASSWORD")
 
-def parse_args(argv):
-    parser = argparse.ArgumentParser(description="Submit study to ENA using XML")
-    parser.add_argument("--study", help="raw reads study ID", required=True)
-    parser.add_argument(
-        "--directory", help="directory containing study XML", required=False
-    )
-    parser.add_argument(
-        "--test",
-        help="run test submission only",
-        required=False,
-        default=False,
-        action="store_true",
-    )
-    return parser.parse_args(argv)
+DROPBOX_DEV = "https://wwwdev.ebi.ac.uk/ena/submit/drop-box/submit"
+DROPBOX_PROD = "https://www.ebi.ac.uk/ena/submit/drop-box/submit/"
 
 
 def parse_failed_study_acc(report):
@@ -93,17 +98,28 @@ def project_submission(study_id, test=False, directory=None):
         )
 
 
-if __name__ == "__main__":
-    args = parse_args(sys.argv[1:])
+def main():
+    parser = argparse.ArgumentParser(description="Submit study to ENA using XML")
+    parser.add_argument("--study", help="raw reads study ID", required=True)
+    parser.add_argument(
+        "--directory", help="directory containing study XML", required=False
+    )
+    parser.add_argument(
+        "--test",
+        help="run test submission only",
+        required=False,
+        default=False,
+        action="store_true",
+    )
+    args = parser.parse_args()
+
     if "ENA_WEBIN_PASSWORD" not in os.environ:
         raise Exception("The variable ENA_WEBIN_PASSWORD is missing from the env.")
     if "ENA_WEBIN" not in os.environ:
         raise Exception("The variable ENA_WEBIN is missing from the env")
 
-    ENA_WEBIN = os.environ.get("ENA_WEBIN")
-    ENA_WEBIN_PASSWORD = os.environ.get("ENA_WEBIN_PASSWORD")
-
-    DROPBOX_DEV = "https://wwwdev.ebi.ac.uk/ena/submit/drop-box/submit"
-    DROPBOX_PROD = "https://www.ebi.ac.uk/ena/submit/drop-box/submit/"
-
     project_submission(args.study, args.test, args.directory)
+
+
+if __name__ == "__main__":
+    main()
