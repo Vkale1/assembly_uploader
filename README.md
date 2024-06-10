@@ -1,5 +1,5 @@
 # Public ENA Assembly uploader
-Upload of metagenome and metatranscriptome assemblies to ENA
+Upload of metagenome and metatranscriptome assemblies to the [European Nucleotide Archive (ENA)](https://www.ebi.ac.uk/ena)
 
 Pre-requisites:
 - CSV metadata file. One per study. See test/fixtures/test_metadata for an example
@@ -17,16 +17,22 @@ ENA_WEBIN_PASSWORD
 export ENA_WEBIN_PASSWORD=password
 ```
 
-## Register study and generate pre-upload files - change this to python package installation instead?
-The script needs `python`, `requests`, and `ena-webin-cli` to run. Install the package:
+## Installation
+
+Install the package:
 
 ```bash
-python3 -m pip install -i https://test.pypi.org/simple/ --no-deps assemblyuploader==0.0.0
+pip install assembly_uploader
 ```
+
+## Register study and generate pre-upload files
 
 **If you already have a registered study accession for your assembly files skip to step 3.**
 
-Step 1. This step will generate a folder STUDY_upload and a project XML and submission XML within it:
+### Step 1
+
+This step will generate a folder STUDY_upload and a project XML and submission XML within it:
+
 ```bash
 study_xmls
   --study STUDY         raw reads study ID
@@ -39,7 +45,9 @@ study_xmls
                         pubmed ID for connected publication if available
 ```
 
-Step 2. This step submit the XML to ENA and generate a new assembly study accession. Keep note of the newly generated study accession:
+### Step 2
+
+This step submit the XML to ENA and generate a new assembly study accession. Keep note of the newly generated study accession:
 
 ```bash
 submit_study
@@ -48,7 +56,10 @@ submit_study
 ```
 
 
-Step 3. This step will generate manifest files in the folder STUDY_UPLOAD for runs specified in the metadata file:
+### Step 3
+
+This step will generate manifest files in the folder STUDY_UPLOAD for runs specified in the metadata file:
+
 ```bash
 assembly_manifest
   --study STUDY         raw reads study ID
@@ -59,6 +70,7 @@ assembly_manifest
 ```
 
 ## Upload assemblies
+
 Once manifest files are generated, it is necessary to use ENA's webin-cli resource to upload genomes.
 
 To test your submission add the `-test` argument.
