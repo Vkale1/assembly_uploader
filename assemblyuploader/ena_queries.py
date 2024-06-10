@@ -13,20 +13,20 @@ ENA_API_URL = os.environ.get(
 
 
 def build_data(accession, accession_type):
-    if 'study' in accession_type:
+    if "study" in accession_type:
         data = {
-            'result': 'study',
-            'query': f'{accession_type}="{accession}"',
-            'fields': 'study_accession,study_title,study_description,first_public',
-            'format': 'json',
+            "result": "study",
+            "query": f'{accession_type}="{accession}"',
+            "fields": "study_accession,study_title,study_description,first_public",
+            "format": "json",
         }
         return data
     else:
         data = {
-            'result': 'read_run',
-            'query': f'run_accession="{accession}"',
-            'fields': 'run_accession,sample_accession,instrument_model,instrument_platform',
-            'format': 'json',
+            "result": "read_run",
+            "query": f'run_accession="{accession}"',
+            "fields": "run_accession,sample_accession,instrument_model,instrument_platform",
+            "format": "json",
         }
         return data
 
@@ -58,14 +58,14 @@ def parse_response_error(response):
 
 
 def parse_accession(accession):
-    if accession.startswith('PRJ'):
-        return 'study_accession'
-    elif 'RP' in accession:
-        return 'secondary_study_accession'
-    elif 'RR' in accession:
-        return 'run_accession'
+    if accession.startswith("PRJ"):
+        return "study_accession"
+    elif "RP" in accession:
+        return "secondary_study_accession"
+    elif "RR" in accession:
+        return "run_accession"
     else:
-        logging.error(f'{accession} is not a valid accession')
+        logging.error(f"{accession} is not a valid accession")
         sys.exit()
 
 
@@ -85,7 +85,10 @@ class EnaQuery:
     def post_request(self):
         if self.auth:
             response = requests.post(
-                self.url, data=self.data, auth=self.auth, **get_default_connection_headers()
+                self.url,
+                data=self.data,
+                auth=self.auth,
+                **get_default_connection_headers(),
             )
         else:
             logging.warning(
@@ -100,8 +103,3 @@ class EnaQuery:
     def build_query(self):
         ena_response = self.post_request()
         return parse_response_error(ena_response)
-
-
-
-
-

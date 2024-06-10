@@ -8,18 +8,29 @@ from .ena_queries import EnaQuery
 
 
 def parse_args(argv):
-    parser = argparse.ArgumentParser(
-        description="Study XML generation")
-    parser.add_argument('--study', help='raw reads study ID', required=True)
-    parser.add_argument('--library', help='metagenome or metatranscriptome')
-    parser.add_argument('--center', help='center for upload e.g. EMG')
-    parser.add_argument('--hold', help='hold date (private) if it should be different from the provided study in '
-                                       'format dd-mm-yyyy. Will inherit the release date of the raw read study if not '
-                                       'provided.', required=False)
-    parser.add_argument('--tpa', help='is the study a third party assembly. Default True', action='store_true',
-                        default=True)
-    parser.add_argument('--publication', help='pubmed ID for connected publication if available', required=False)
-    parser.add_argument('--output-dir', help='Path to output directory', required=False)
+    parser = argparse.ArgumentParser(description="Study XML generation")
+    parser.add_argument("--study", help="raw reads study ID", required=True)
+    parser.add_argument("--library", help="metagenome or metatranscriptome")
+    parser.add_argument("--center", help="center for upload e.g. EMG")
+    parser.add_argument(
+        "--hold",
+        help="hold date (private) if it should be different from the provided study in "
+        "format dd-mm-yyyy. Will inherit the release date of the raw read study if not "
+        "provided.",
+        required=False,
+    )
+    parser.add_argument(
+        "--tpa",
+        help="is the study a third party assembly. Default True",
+        action="store_true",
+        default=True,
+    )
+    parser.add_argument(
+        "--publication",
+        help="pubmed ID for connected publication if available",
+        required=False,
+    )
+    parser.add_argument("--output-dir", help="Path to output directory", required=False)
     return parser.parse_args(argv)
 
 
@@ -28,11 +39,13 @@ class RegisterStudy:
         self.args = parse_args(argv)
         self.study = self.args.study
         if self.args.output_dir:
-            self.upload_dir = os.path.join(self.args.output_dir, f'{self.study}_upload')
+            self.upload_dir = os.path.join(self.args.output_dir, f"{self.study}_upload")
         else:
-            self.upload_dir = os.path.join(os.getcwd(), f'{self.study}_upload')
-        self.study_xml_path = os.path.join(self.upload_dir, f'{self.study}_reg.xml')
-        self.submission_xml_path = os.path.join(self.upload_dir, f'{self.study}_submission.xml')
+            self.upload_dir = os.path.join(os.getcwd(), f"{self.study}_upload")
+        self.study_xml_path = os.path.join(self.upload_dir, f"{self.study}_reg.xml")
+        self.submission_xml_path = os.path.join(
+            self.upload_dir, f"{self.study}_submission.xml"
+        )
         self.center = self.args.center
         self.hold = self.args.hold
 
@@ -49,12 +62,16 @@ class RegisterStudy:
         else:
             sub_abstract = ""
 
-        title = f"{subtitle} assembly of {self.study_obj['study_accession']} data " \
-                f"set ({self.study_obj['study_title']})."
-        abstract = f"The {sub_abstract}assembly was derived from the primary data " \
-                   f"set {self.study_obj['study_accession']}."
+        title = (
+            f"{subtitle} assembly of {self.study_obj['study_accession']} data "
+            f"set ({self.study_obj['study_title']})."
+        )
+        abstract = (
+            f"The {sub_abstract}assembly was derived from the primary data "
+            f"set {self.study_obj['study_accession']}."
+        )
 
-        project_alias = self.study_obj['study_accession'] + "_assembly"
+        project_alias = self.study_obj["study_accession"] + "_assembly"
         with open(self.study_xml_path, "wb") as study_file:
             project_set = ET.Element("PROJECT_SET")
             project = ET.SubElement(project_set, "PROJECT")
@@ -79,13 +96,19 @@ class RegisterStudy:
             # project attributes: TPA and assembly type
             project_attributes = ET.SubElement(project, "PROJECT_ATTRIBUTES")
             if self.args.tpa:
-                project_attribute_tpa = ET.SubElement(project_attributes, "PROJECT_ATTRIBUTE")
+                project_attribute_tpa = ET.SubElement(
+                    project_attributes, "PROJECT_ATTRIBUTE"
+                )
                 ET.SubElement(project_attribute_tpa, "TAG").text = "study keyword"
                 ET.SubElement(project_attribute_tpa, "VALUE").text = "TPA:assembly"
 
-            project_attribute_type = ET.SubElement(project_attributes, "PROJECT_ATTRIBUTE")
+            project_attribute_type = ET.SubElement(
+                project_attributes, "PROJECT_ATTRIBUTE"
+            )
             ET.SubElement(project_attribute_type, "TAG").text = "new_study_type"
-            ET.SubElement(project_attribute_type, "VALUE").text = f"{self.args.library} assembly"
+            ET.SubElement(
+                project_attribute_type, "VALUE"
+            ).text = f"{self.args.library} assembly"
 
             dom = minidom.parseString(ET.tostring(project_set, encoding="utf-8"))
             study_file.write(dom.toprettyxml().encode("utf-8"))
@@ -101,8 +124,8 @@ class RegisterStudy:
             ET.SubElement(action_sub, "ADD")
 
             # attributes: function and hold date
-            public = self.study_obj['first_public']
-            today = datetime.today().strftime('%Y-%m-%d')
+            public = self.study_obj["first_public"]
+            today = datetime.today().strftime("%Y-%m-%d")
             if self.hold:
                 action_hold = ET.SubElement(actions, "ACTION")
                 hold = ET.SubElement(action_hold, "HOLD")

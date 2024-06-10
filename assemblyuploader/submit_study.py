@@ -10,17 +10,26 @@ logging.basicConfig(level=logging.INFO)
 
 
 def parse_args(argv):
-    parser = argparse.ArgumentParser(
-        description="Submit study to ENA using XML")
-    parser.add_argument('--study', help='raw reads study ID', required=True)
-    parser.add_argument('--directory', help='directory containing study XML', required=False)
-    parser.add_argument('--test', help='run test submission only', required=False, default=False, action='store_true')
+    parser = argparse.ArgumentParser(description="Submit study to ENA using XML")
+    parser.add_argument("--study", help="raw reads study ID", required=True)
+    parser.add_argument(
+        "--directory", help="directory containing study XML", required=False
+    )
+    parser.add_argument(
+        "--test",
+        help="run test submission only",
+        required=False,
+        default=False,
+        action="store_true",
+    )
     return parser.parse_args(argv)
 
 
 def parse_failed_study_acc(report):
-    failed_re = r"The object being added already exists in the submission account with accession: " \
-                r"\"(PRJ[EDN][A-Z][0-9]+)\""
+    failed_re = (
+        r"The object being added already exists in the submission account with accession: "
+        r"\"(PRJ[EDN][A-Z][0-9]+)\""
+    )
     root = ET.fromstring(report)
     errors = root.findall(".//ERROR")
 
@@ -44,25 +53,34 @@ def project_submission(study_id, test=False, directory=None):
     if directory:
         workdir = directory
     else:
-        workdir = os.path.join(os.getcwd(), f'{study_id}_upload')
-    submission_xml = os.path.join(workdir, f'{study_id}_submission.xml')
-    study_xml = os.path.join(workdir, f'{study_id}_reg.xml')
+        workdir = os.path.join(os.getcwd(), f"{study_id}_upload")
+    submission_xml = os.path.join(workdir, f"{study_id}_submission.xml")
+    study_xml = os.path.join(workdir, f"{study_id}_reg.xml")
     files = {
-        'SUBMISSION': open(submission_xml, 'rb'),
-        'ACTION': (None, 'ADD'),
-        'PROJECT': open(study_xml, "rb"),
+        "SUBMISSION": open(submission_xml, "rb"),
+        "ACTION": (None, "ADD"),
+        "PROJECT": open(study_xml, "rb"),
     }
 
-    submission_report = requests.post(endpoint, files=files, auth=(ENA_WEBIN, ENA_WEBIN_PASSWORD))
+    submission_report = requests.post(
+        endpoint, files=files, auth=(ENA_WEBIN, ENA_WEBIN_PASSWORD)
+    )
     receipt_xml_str = submission_report.content.decode("utf-8")
 
     if 'success="true"' in receipt_xml_str:
         primary_accession = parse_success_study_acc(receipt_xml_str)
-        logging.info(f'A new study accession has been created: {primary_accession}. Make a note of this!')
+        logging.info(
+            f"A new study accession has been created: {primary_accession}. Make a note of this!"
+        )
         return primary_accession
-    elif 'The object being added already exists in the submission account' in receipt_xml_str:
+    elif (
+        "The object being added already exists in the submission account"
+        in receipt_xml_str
+    ):
         primary_accession = parse_failed_study_acc(receipt_xml_str)
-        logging.info(f'An accession with this alias already exists in project {primary_accession}')
+        logging.info(
+            f"An accession with this alias already exists in project {primary_accession}"
+        )
         return primary_accession
     elif submission_report.status_code >= requests.codes.server_error:
         logging.error(
@@ -70,7 +88,7 @@ def project_submission(study_id, test=False, directory=None):
         )
     else:
         logging.error(
-            f'Project could not be registered on ENA. HTTP response: {receipt_xml_str}'
+            f"Project could not be registered on ENA. HTTP response: {receipt_xml_str}"
         )
 
 
@@ -81,11 +99,10 @@ if __name__ == "__main__":
     if "ENA_WEBIN" not in os.environ:
         raise Exception("The variable ENA_WEBIN is missing from the env")
 
-    ENA_WEBIN = os.environ.get('ENA_WEBIN')
-    ENA_WEBIN_PASSWORD = os.environ.get('ENA_WEBIN_PASSWORD')
+    ENA_WEBIN = os.environ.get("ENA_WEBIN")
+    ENA_WEBIN_PASSWORD = os.environ.get("ENA_WEBIN_PASSWORD")
 
     DROPBOX_DEV = "https://wwwdev.ebi.ac.uk/ena/submit/drop-box/submit"
     DROPBOX_PROD = "https://www.ebi.ac.uk/ena/submit/drop-box/submit/"
 
     project_submission(args.study, args.test, args.directory)
-
