@@ -25,12 +25,13 @@ def get_md5(path_to_file):
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(
-        description="independent to directory structure")
+        description="Generate manifests for assembly uploads")
     parser.add_argument('--study', help='raw reads study ID', required=True)
     parser.add_argument('--data', help='metadata CSV - run_id, coverage, assembler, version, filepath')
     parser.add_argument('--assembly_study', help='pre-existing study ID to submit to if available. '
                                                  'Must exist in the webin account', required=False)
     parser.add_argument('--force', help='overwrite all existing manifests', required=False, action='store_true')
+    parser.add_argument('--output-dir', help='Path to output directory', required=False)
     return parser.parse_args(argv)
 
 
@@ -40,14 +41,17 @@ class AssemblyManifest:
         self.study = self.args.study
         self.metadata = parse_info(self.args.data)
         self.new_project = self.args.assembly_study
-        self.upload_dir = os.path.join(os.getcwd(), f'{self.study}_upload')
+        if self.args.output_dir:
+            self.upload_dir = os.path.join(self.args.output_dir, f'{self.study}_upload')
+        else:
+            self.upload_dir = os.path.join(os.getcwd(), f'{self.study}_upload')
         if not os.path.exists(self.upload_dir):
             os.mkdir(self.upload_dir)
         self.force = self.args.force
         if not os.path.exists(self.upload_dir):
             os.makedirs(self.upload_dir)
 
-    def generate_manifest(self, new_project_id, upload_dir, run_id, sample, sequencer, coverage, assembler,
+    def generate_manifest(self, run_id, sample, sequencer, coverage, assembler,
                           assembler_version, assembly_path):
         logging.info('Writing manifest for ' + run_id)
         #   sanity check assembly file provided
@@ -62,13 +66,13 @@ class AssemblyManifest:
         #   collect variables
         assembly_alias = get_md5(assembly_path)
         assembler = f'{assembler} v{assembler_version}'
-        manifest_path = os.path.join(upload_dir, f'{run_id}.manifest')
+        manifest_path = os.path.join(self.upload_dir, f'{run_id}.manifest')
         #   skip existing manifests
         if os.path.exists(manifest_path) and not self.force:
-            logging.error(f'Manifest for {run_id} already exists at {manifest_path}. Skipping')
+            logging.warning(f'Manifest for {run_id} already exists at {manifest_path}. Skipping')
             return
         values = (
-            ('STUDY', new_project_id),
+            ('STUDY', self.new_project),
             ('SAMPLE', sample),
             ('RUN_REF', run_id),
             ('ASSEMBLYNAME', run_id+'_'+assembly_alias),
@@ -89,7 +93,7 @@ class AssemblyManifest:
         for row in self.metadata:
             ena_query = EnaQuery(row['Run'])
             ena_metadata = ena_query.build_query()
-            self.generate_manifest(self.new_project, self.upload_dir, row['Run'], ena_metadata['sample_accession'],
+            self.generate_manifest(row['Run'], ena_metadata['sample_accession'],
                                    ena_metadata['instrument_model'], row['Coverage'], row['Assembler'], row['Version'],
                                    row['Filepath'])
 
