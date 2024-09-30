@@ -22,7 +22,7 @@ export ENA_WEBIN_PASSWORD=password
 Install the package:
 
 ```bash
-pip install assembly_uploader
+pip install assembly-uploader
 ```
 
 ## Register study and generate pre-upload files
@@ -40,7 +40,7 @@ study_xmls
   --center CENTER       center for upload e.g. EMG
   --hold HOLD           hold date (private) if it should be different from the provided study in format dd-mm-yyyy. Will inherit the release date of the raw read study if not
                         provided.
-  --tpa                 is the study a third party assembly. Default True
+  --tpa                 use this flag if the study a third party assembly. Default False
   --publication PUBLICATION
                         pubmed ID for connected publication if available
 ```
