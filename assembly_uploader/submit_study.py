@@ -16,16 +16,19 @@
 
 import argparse
 import logging
-import os
 import re
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 import requests
 
+from assembly_uploader.webin_utils import (
+    ensure_webin_credentials_exist,
+    get_webin_credentials,
+)
+
 logging.basicConfig(level=logging.INFO)
 
-ENA_WEBIN = os.environ.get("ENA_WEBIN")
-ENA_WEBIN_PASSWORD = os.environ.get("ENA_WEBIN_PASSWORD")
 
 DROPBOX_DEV = "https://wwwdev.ebi.ac.uk/ena/submit/drop-box/submit"
 DROPBOX_PROD = "https://www.ebi.ac.uk/ena/submit/drop-box/submit/"
@@ -53,15 +56,14 @@ def parse_success_study_acc(report):
         return new_acc[0]
 
 
-def project_submission(study_id, test=False, directory=None):
-    endpoint = DROPBOX_DEV if test else DROPBOX_PROD
+def submit_study(study_id: str, is_test: bool = False, directory: Path = None):
+    endpoint = DROPBOX_DEV if is_test else DROPBOX_PROD
     logging.info(f"Submitting study xml {study_id}")
-    if directory:
-        workdir = directory
-    else:
-        workdir = os.path.join(os.getcwd(), f"{study_id}_upload")
-    submission_xml = os.path.join(workdir, f"{study_id}_submission.xml")
-    study_xml = os.path.join(workdir, f"{study_id}_reg.xml")
+    workdir = directory or Path.cwd() / Path(f"{study_id}_upload")
+    assert workdir.exists()
+
+    submission_xml = workdir / Path(f"{study_id}_submission.xml")
+    study_xml = workdir / Path(f"{study_id}_reg.xml")
     files = {
         "SUBMISSION": open(submission_xml, "rb"),
         "ACTION": (None, "ADD"),
@@ -69,7 +71,7 @@ def project_submission(study_id, test=False, directory=None):
     }
 
     submission_report = requests.post(
-        endpoint, files=files, auth=(ENA_WEBIN, ENA_WEBIN_PASSWORD)
+        endpoint, files=files, auth=get_webin_credentials()
     )
     receipt_xml_str = submission_report.content.decode("utf-8")
 
@@ -113,12 +115,9 @@ def main():
     )
     args = parser.parse_args()
 
-    if "ENA_WEBIN_PASSWORD" not in os.environ:
-        raise Exception("The variable ENA_WEBIN_PASSWORD is missing from the env.")
-    if "ENA_WEBIN" not in os.environ:
-        raise Exception("The variable ENA_WEBIN is missing from the env")
+    ensure_webin_credentials_exist()
 
-    project_submission(args.study, args.test, args.directory)
+    submit_study(args.study, args.test, Path(args.directory))
 
 
 if __name__ == "__main__":
