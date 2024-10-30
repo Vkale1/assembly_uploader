@@ -10,7 +10,7 @@ from assembly_uploader.webin_utils import (
 
 
 def test_submit_study(study_submission_xml_dir, monkeypatch):
-    ena_dropbopx = responses.add(
+    ena_dropbox = responses.add(
         responses.POST,
         "https://wwwdev.ebi.ac.uk/ena/submit/drop-box/submit",
         body="""
@@ -31,5 +31,5 @@ def test_submit_study(study_submission_xml_dir, monkeypatch):
     new_study = submit_study(
         "SRP272267", is_test=True, directory=study_submission_xml_dir
     )
-    assert ena_dropbopx.call_count == 1
+    assert ena_dropbox.call_count == 1
     assert new_study == "PRJEA1"
