@@ -1,4 +1,4 @@
-# Public ENA Assembly uploader
+# ENA Assembly uploader
 Upload of metagenome and metatranscriptome assemblies to the [European Nucleotide Archive (ENA)](https://www.ebi.ac.uk/ena)
 
 Pre-requisites:
@@ -25,12 +25,13 @@ Install the package:
 pip install assembly-uploader
 ```
 
-## Register study and generate pre-upload files
+## Usage
+### From the command line
+#### Register study and generate pre-upload files
 
 **If you already have a registered study accession for your assembly files skip to step 3.**
 
-### Step 1
-
+#### Step 1: generate XML files for a new assembly study submission
 This step will generate a folder STUDY_upload and a project XML and submission XML within it:
 
 ```bash
@@ -45,7 +46,7 @@ study_xmls
                         pubmed ID for connected publication if available
 ```
 
-### Step 2
+#### Step 2: submit the new assembly study to ENA
 
 This step submit the XML to ENA and generate a new assembly study accession. Keep note of the newly generated study accession:
 
@@ -55,8 +56,7 @@ submit_study
   --test                run test submission only
 ```
 
-
-### Step 3
+#### Step 3: make a manifest file for each assembly
 
 This step will generate manifest files in the folder STUDY_UPLOAD for runs specified in the metadata file:
 
@@ -69,7 +69,7 @@ assembly_manifest
   --force               overwrite all existing manifests
 ```
 
-## Upload assemblies
+#### Step 4: upload assemblies
 
 Once manifest files are generated, it is necessary to use ENA's webin-cli resource to upload genomes.
 
@@ -85,4 +85,58 @@ ena-webin-cli \
   -submit
 ```
 
-More information on ENA's webin-cli can be found [here](<https://ena-docs.readthedocs.io/en/latest/submit/general-guide/webin-cli.html>).
+More information on ENA's webin-cli can be found [in the ENA docs](<https://ena-docs.readthedocs.io/en/latest/submit/general-guide/webin-cli.html>).
+
+### From a Python script
+This `assembly_uploader` can also be used a Python library, so that you can integrate the steps into another Python workflow or tool.
+
+```python
+from pathlib import Path
+
+from assembly_uploader.study_xmls import StudyXMLGenerator, METAGENOME
+from assembly_uploader.submit_study import submit_study
+from assembly_uploader.assembly_manifest import AssemblyManifestGenerator
+
+# Generate new assembly study XML files
+StudyXMLGenerator(
+    study="SRP272267",
+    center_name="EMG",
+    library=METAGENOME,
+    tpa=True,
+    output_dir=Path("my-study"),
+).write()
+
+# Submit new assembly study to ENA
+new_study_accession = submit_study("SRP272267", is_test=True, directory=Path("my-study"))
+print(f"My assembly study has the accession {new_study_accession}")
+
+# Create manifest files for the assemblies to be uploaded
+# This assumes you have a CSV file detailing the assemblies with their assembler and coverage metadata
+# see tests/fixtures/test_metadata for an example
+AssemblyManifestGenerator(
+    study="SRP272267",
+    assembly_study=new_study_accession,
+    assemblies_csv=Path("/path/to/my/assemblies.csv"),
+    output_dir=Path("my-study"),
+).write()
+```
+
+The ENA submission requires `webin-cli`, so follow [Step 4](#step-4-upload-assemblies) above.
+(You could still call this from Python, e.g. with `subprocess.Popen`.)
+
+## Development setup
+Prerequisites: a functioning conda or pixi installation.
+
+To install the assembly uploader codebase in "editable" mode:
+
+```bash
+conda env create -f requirements.yml
+conda activate assemblyuploader
+pip install -e '.[dev,test]'
+pre-commit install
+```
+
+### Testing
+```
+pytest
+```

@@ -20,6 +20,7 @@ import hashlib
 import logging
 import os
 import sys
+from pathlib import Path
 
 from .ena_queries import EnaQuery
 
@@ -64,21 +65,31 @@ def parse_args(argv):
     return parser.parse_args(argv)
 
 
-class AssemblyManifest:
-    def __init__(self, argv=sys.argv[1:]):
-        self.args = parse_args(argv)
-        self.study = self.args.study
-        self.metadata = parse_info(self.args.data)
-        self.new_project = self.args.assembly_study
-        if self.args.output_dir:
-            self.upload_dir = os.path.join(self.args.output_dir, f"{self.study}_upload")
-        else:
-            self.upload_dir = os.path.join(os.getcwd(), f"{self.study}_upload")
-        if not os.path.exists(self.upload_dir):
-            os.mkdir(self.upload_dir)
-        self.force = self.args.force
-        if not os.path.exists(self.upload_dir):
-            os.makedirs(self.upload_dir)
+class AssemblyManifestGenerator:
+    def __init__(
+        self,
+        study: str,
+        assembly_study: str,
+        assemblies_csv: Path,
+        output_dir: Path = None,
+        force: bool = False,
+    ):
+        """
+        Create an assembly manifest file for uploading assemblies detailed in assemblies_csv into the assembly_study.
+        :param study: study accession of the raw reads study
+        :param assembly_study: study accession of the assembly study (e.g. created by Study XMLs)
+        :param assemblies_csv: path to assemblies CSV file, listing run_id, coverage, assembler, version, filepath of each assembly
+        :param output_dir: path to output directory, otherwise CWD
+        :param force: overwrite existing manifests
+        """
+        self.study = study
+        self.metadata = parse_info(assemblies_csv)
+        self.new_project = assembly_study
+
+        self.upload_dir = (output_dir or Path(".")) / Path(f"{self.study}_upload")
+        self.upload_dir.mkdir(exist_ok=True, parents=True)
+
+        self.force = force
 
     def generate_manifest(
         self,
@@ -146,9 +157,19 @@ class AssemblyManifest:
                 row["Filepath"],
             )
 
+    # alias for convenience
+    write = write_manifests
+
 
 def main():
-    gen_manifest = AssemblyManifest()
+    args = parse_args(sys.argv[1:])
+
+    gen_manifest = AssemblyManifestGenerator(
+        study=args.study,
+        assembly_study=args.assembly_study,
+        assemblies_csv=args.data,
+        force=args.force,
+    )
     gen_manifest.write_manifests()
     logging.info("Completed")
 

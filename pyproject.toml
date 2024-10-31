@@ -49,6 +49,7 @@ test = [
     "pytest==8.2.2",
     "pytest-md==0.2.0",
     "pytest-workflow==2.1.0",
+    "pytest-responses==0.5.1"
 ]
 
 [tool.isort]

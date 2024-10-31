@@ -15,20 +15,28 @@
 # limitations under the License.
 
 import argparse
-import os
 import sys
 import xml.dom.minidom as minidom
 import xml.etree.ElementTree as ET
 from datetime import datetime
+from pathlib import Path
 
 from .ena_queries import EnaQuery
+
+METAGENOME = "metagenome"
+METATRANSCRIPTOME = "metatranscriptome"
 
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(description="Study XML generation")
     parser.add_argument("--study", help="raw reads study ID", required=True)
-    parser.add_argument("--library", help="metagenome or metatranscriptome")
-    parser.add_argument("--center", help="center for upload e.g. EMG")
+    parser.add_argument(
+        "--library",
+        help="Library ",
+        choices=["metagenome", "metatranscriptome"],
+        required=True,
+    )
+    parser.add_argument("--center", help="center for upload e.g. EMG", required=True)
     parser.add_argument(
         "--hold",
         help="hold date (private) if it should be different from the provided study in "
@@ -45,48 +53,79 @@ def parse_args(argv):
     parser.add_argument(
         "--publication",
         help="pubmed ID for connected publication if available",
+        type=int,
         required=False,
     )
     parser.add_argument("--output-dir", help="Path to output directory", required=False)
     return parser.parse_args(argv)
 
 
-class RegisterStudy:
-    def __init__(self, argv=sys.argv[1:]):
-        self.args = parse_args(argv)
-        self.study = self.args.study
-        if self.args.output_dir:
-            self.upload_dir = os.path.join(self.args.output_dir, f"{self.study}_upload")
-        else:
-            self.upload_dir = os.path.join(os.getcwd(), f"{self.study}_upload")
-        self.study_xml_path = os.path.join(self.upload_dir, f"{self.study}_reg.xml")
-        self.submission_xml_path = os.path.join(
-            self.upload_dir, f"{self.study}_submission.xml"
+class StudyXMLGenerator:
+    def __init__(
+        self,
+        study: str,
+        center_name: str,
+        library: str,
+        hold_date: datetime = None,
+        tpa: bool = False,
+        output_dir: Path = None,
+        publication: int = None,
+    ):
+        f"""
+        Build submission files for an assembly study.
+
+        :param study: raw reads study ID/accession
+        :param center_name: submission centre name, e.g. EMG
+        :param library: {METAGENOME} or {METATRANSCRIPTOME}
+        :param hold_date: hold date for the data to remain private, if it should be different from the provided study"
+        :param tpa: is this a third-party assembly?
+        :param output_dir: path to output directory (default is CWD)
+        :param publication: pubmed ID for connected publication if available
+        :return: StudyXMLGenerator object
+        """
+        self.study = study
+
+        self.upload_dir = (output_dir or Path(".")) / Path(f"{self.study}_upload")
+        self.upload_dir = self.upload_dir.absolute()
+        self.upload_dir.mkdir(parents=True, exist_ok=True)
+
+        self.study_xml_path = self.upload_dir / Path(f"{self.study}_reg.xml")
+        self.submission_xml_path = self.upload_dir / Path(
+            f"{self.study}_submission.xml"
         )
-        self.center = self.args.center
-        self.hold = self.args.hold
+
+        self.center = center_name
+        self.hold_date = hold_date
+
+        assert library in [METAGENOME, METATRANSCRIPTOME]
+
+        self.library = library
+        self.tpa = tpa
+        self.publication = publication
 
         ena_query = EnaQuery(self.study)
         self.study_obj = ena_query.build_query()
 
-        if not os.path.exists(self.upload_dir):
-            os.makedirs(self.upload_dir)
+        self._title = None
+        self._abstract = None
 
     def write_study_xml(self):
-        subtitle = self.args.library.lower()
-        if self.args.tpa:
+        subtitle = self.library.title()
+        if self.tpa:
             sub_abstract = "Third Party Annotation (TPA) "
         else:
             sub_abstract = ""
 
         title = (
             f"{subtitle} assembly of {self.study_obj['study_accession']} data "
-            f"set ({self.study_obj['study_title']})."
+            f"set ({self.study_obj['study_title']})"
         )
+        self._title = title
         abstract = (
             f"The {sub_abstract}assembly was derived from the primary data "
-            f"set {self.study_obj['study_accession']}."
+            f"set {self.study_obj['study_accession']}"
         )
+        self._abstract = abstract
 
         project_alias = self.study_obj["study_accession"] + "_assembly"
         with open(self.study_xml_path, "wb") as study_file:
@@ -103,16 +142,16 @@ class RegisterStudy:
             ET.SubElement(submission_project, "SEQUENCING_PROJECT")
 
             # publication links
-            if self.args.publication:
+            if self.publication:
                 project_links = ET.SubElement(project, "PROJECT_LINKS")
                 project_link = ET.SubElement(project_links, "PROJECT_LINK")
                 xref_link = ET.SubElement(project_link, "XREF_LINK")
                 ET.SubElement(xref_link, "DB").text = "PUBMED"
-                ET.SubElement(xref_link, "ID").text = self.args.publication
+                ET.SubElement(xref_link, "ID").text = self.publication
 
             # project attributes: TPA and assembly type
             project_attributes = ET.SubElement(project, "PROJECT_ATTRIBUTES")
-            if self.args.tpa:
+            if self.tpa:
                 project_attribute_tpa = ET.SubElement(
                     project_attributes, "PROJECT_ATTRIBUTE"
                 )
@@ -124,7 +163,7 @@ class RegisterStudy:
             )
             ET.SubElement(project_attribute_type, "TAG").text = "new_study_type"
             ET.SubElement(project_attribute_type, "VALUE").text = (
-                f"{self.args.library} assembly"
+                f"{self.library} assembly"
             )
 
             dom = minidom.parseString(ET.tostring(project_set, encoding="utf-8"))
@@ -143,11 +182,11 @@ class RegisterStudy:
             # attributes: function and hold date
             public = self.study_obj["first_public"]
             today = datetime.today().strftime("%Y-%m-%d")
-            if self.hold:
+            if self.hold_date:
                 action_hold = ET.SubElement(actions, "ACTION")
                 hold = ET.SubElement(action_hold, "HOLD")
-                hold.set("HoldUntilDate", self.hold)
-            elif public > today and not self.hold:
+                hold.set("HoldUntilDate", self.hold_date.strftime("%d-%m-%Y"))
+            elif public > today and not self.hold_date:
                 action_hold = ET.SubElement(actions, "ACTION")
                 hold = ET.SubElement(action_hold, "HOLD")
                 hold.set("HoldUntilDate", public)
@@ -155,9 +194,25 @@ class RegisterStudy:
             dom = minidom.parseString(ET.tostring(submission, encoding="utf-8"))
             submission_file.write(dom.toprettyxml().encode("utf-8"))
 
+    def write(self):
+        """
+        Write registration and submission XML files.
+        """
+        self.write_study_xml()
+        self.write_submission_xml()
+
 
 def main():
-    study_reg = RegisterStudy()
+    args = parse_args(sys.argv[1:])
+    study_reg = StudyXMLGenerator(
+        study=args.study,
+        center_name=args.center,
+        library=args.library,
+        hold_date=args.hold,
+        tpa=args.tpa,
+        output_dir=Path(args.output_dir) if args.output_dir else None,
+        publication=args.publication,
+    )
     study_reg.write_study_xml()
     study_reg.write_submission_xml()
 
