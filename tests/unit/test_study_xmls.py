@@ -6,7 +6,7 @@ from assembly_uploader import study_xmls
 def test_study_xmls(tmp_path, study_reg_xml_content, study_submission_xml_content):
     ena_api = responses.add(
         responses.POST,
-        "https://www.ebi.ac.uk/ena/portal/api/v2.0/search",
+        "https://www.ebi.ac.uk/ena/portal/api/search",
         json=[
             {
                 "study_accession": "PRJEB41657",

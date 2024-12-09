@@ -64,7 +64,6 @@ class EnaQuery:
         password = os.getenv("ENA_WEBIN_PASSWORD")
         if username is None or password is None:
             logging.error("ENA_WEBIN and ENA_WEBIN_PASSWORD are not set")
-            sys.exit(0)
         if username and password:
             self.auth = (username, password)
         else:
