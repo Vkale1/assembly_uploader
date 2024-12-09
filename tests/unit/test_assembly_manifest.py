@@ -4,6 +4,7 @@ import responses
 
 from assembly_uploader.assembly_manifest import AssemblyManifestGenerator
 
+
 def test_assembly_manifest(assemblies_metadata, tmp_path, run_manifest_content):
     responses.add(
         responses.POST,

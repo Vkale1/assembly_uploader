@@ -45,14 +45,9 @@ def parse_args(argv):
     parser = argparse.ArgumentParser(
         description="Generate manifests for assembly uploads"
     )
+    parser.add_argument("--study", help="raw reads study ID", required=True)
     parser.add_argument(
-        "--study", 
-        help="raw reads study ID", 
-        required=True
-    )
-    parser.add_argument(
-        "--data", 
-        help="metadata CSV - run_id, coverage, assembler, version, filepath"
+        "--data", help="metadata CSV - run_id, coverage, assembler, version, filepath"
     )
     parser.add_argument(
         "--assembly_study",
@@ -66,17 +61,13 @@ def parse_args(argv):
         required=False,
         action="store_true",
     )
+    parser.add_argument("--output-dir", help="Path to output directory", required=False)
     parser.add_argument(
-        "--output-dir", 
-        help="Path to output directory", 
-        required=False
-    )
-    parser.add_argument(
-        "--private", 
-        help="use flag if private", 
-        required=False, 
-        default=False, 
-        action='store_true'
+        "--private",
+        help="use flag if private",
+        required=False,
+        default=False,
+        action="store_true",
     )
     return parser.parse_args(argv)
 
@@ -89,7 +80,7 @@ class AssemblyManifestGenerator:
         assemblies_csv: Path,
         output_dir: Path = None,
         force: bool = False,
-        private: bool = False
+        private: bool = False,
     ):
         """
         Create an assembly manifest file for uploading assemblies detailed in assemblies_csv into the assembly_study.
@@ -188,7 +179,7 @@ def main():
         assembly_study=args.assembly_study,
         assemblies_csv=args.data,
         force=args.force,
-        private=args.private 
+        private=args.private,
     )
     gen_manifest.write_manifests()
     logging.info("Completed")
@@ -196,6 +187,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-

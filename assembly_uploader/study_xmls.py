@@ -29,22 +29,14 @@ METATRANSCRIPTOME = "metatranscriptome"
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(description="Study XML generation")
-    parser.add_argument(
-        "--study", 
-        help="raw reads study ID", 
-        required=True
-    )
+    parser.add_argument("--study", help="raw reads study ID", required=True)
     parser.add_argument(
         "--library",
         help="Library ",
         choices=["metagenome", "metatranscriptome"],
         required=True,
     )
-    parser.add_argument(
-        "--center", 
-        help="center for upload e.g. EMG", 
-        required=True
-    )
+    parser.add_argument("--center", help="center for upload e.g. EMG", required=True)
     parser.add_argument(
         "--hold",
         help="hold date (private) if it should be different from the provided study in "
@@ -64,17 +56,13 @@ def parse_args(argv):
         type=int,
         required=False,
     )
+    parser.add_argument("--output-dir", help="Path to output directory", required=False)
     parser.add_argument(
-        "--output-dir", 
-        help="Path to output directory", 
-        required=False
-    )
-    parser.add_argument(
-        "--private", 
-        help="use flag if private", 
-        required=False, 
-        default=False, 
-        action='store_true'
+        "--private",
+        help="use flag if private",
+        required=False,
+        default=False,
+        action="store_true",
     )
     return parser.parse_args(argv)
 
@@ -234,7 +222,7 @@ def main():
         tpa=args.tpa,
         output_dir=Path(args.output_dir) if args.output_dir else None,
         publication=args.publication,
-        private=args.private
+        private=args.private,
     )
     study_reg.write_study_xml()
     study_reg.write_submission_xml()
