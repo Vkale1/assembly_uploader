@@ -1,2 +1,2 @@
 Run,Coverage,Assembler,Version,Filepath
-ERR4918394,20.0,metaSPADES,3.12.1,../tests/fixtures/ERR4918394.fasta.gz
+ERR4918394,20.0,metaSPADES,3.12.1,tests/fixtures/ERR4918394.fasta.gz

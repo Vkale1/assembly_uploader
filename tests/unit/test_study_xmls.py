@@ -20,6 +20,7 @@ def test_study_xmls(tmp_path, study_reg_xml_content, study_submission_xml_conten
         study="ERP125469",
         center_name="EMG",
         library=study_xmls.METAGENOME,
+        publication=1234,
         tpa=True,
         output_dir=tmp_path,
     )

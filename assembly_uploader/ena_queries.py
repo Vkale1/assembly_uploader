@@ -63,7 +63,7 @@ class EnaQuery:
         username = os.getenv("ENA_WEBIN")
         password = os.getenv("ENA_WEBIN_PASSWORD")
         if username is None or password is None:
-            print("ENA_WEBIN and ENA_WEBIN_PASSWORD are not set")
+            logging.error("ENA_WEBIN and ENA_WEBIN_PASSWORD are not set")
             sys.exit(0)
         if username and password:
             self.auth = (username, password)
@@ -84,9 +84,9 @@ class EnaQuery:
             data = json.loads(response.text)[0]
             return data
         except NoDataException:
-            print("Could not find {} in ENA".format(self.accession))
+            logging.error("Could not find {} in ENA".format(self.accession))
         except (IndexError, TypeError, ValueError, KeyError):
-            print("Failed to fetch {}, returned error: {}.".format(self.accession, response.text))
+            logging.error("Failed to fetch {}, returned error: {}.".format(self.accession, response.text))
 
     def get_study(self,):
         if not self.private:
@@ -104,22 +104,21 @@ class EnaQuery:
                 final_data = self.check_api_error(response)
                 return final_data
             finally:
-                print("{} public data returned from ENA".format(self.accession))
+                logging.info("{} public data returned from ENA".format(self.accession))
                 
         else:
             #   get text based fields from reports API and reformat to match public portal API
             url = f"https://www.ebi.ac.uk/ena/submit/report/studies/xml/{self.accession}"
             try:
                 xml_response = requests.get(url, auth=self.auth)
-                xml_response.raise_for_status()  # Check for HTTP request errors
                 manifestXml = minidom.parseString(xml_response.text)
                 study_title = manifestXml.getElementsByTagName("STUDY_TITLE")[0].firstChild.nodeValue
                 study_desc = manifestXml.getElementsByTagName("STUDY_DESCRIPTION")[0].firstChild.nodeValue
                 final_data = {'study_accession': self.accession, 'study_description': study_desc, 'study_title': study_title}
             except ExpatError as e:
-                print(f"XML parsing failed: {e}")
+                logging.error(f"XML parsing failed: {e}")
             except requests.RequestException as e:
-                print(f"HTTP request failed: {e}")
+                logging.error(f"HTTP request failed: {e}")
             
 
             #   get hold date from submissions API and reformat to match public portal API
@@ -130,7 +129,7 @@ class EnaQuery:
             #   remove time and keep date
             first_public = study_data['firstPublic'].split('T')[0] 
             final_data['first_public'] = first_public
-            print("{} private data returned from ENA".format(self.accession))
+            logging.info("{} private data returned from ENA".format(self.accession))
             return final_data
 
 
@@ -156,15 +155,15 @@ class EnaQuery:
                 raise ValueError("Could not find run {} in ENA after {} attempts".format(self.accession, RETRY_COUNT))
         run = self.check_api_error(response)
         if run is None:
-            print(f"private run {self.accession} is not present in the specified Webin account")
+            logging.error(f"private run {self.accession} is not present in the specified Webin account")
 
         if self.private:
             run_data = run['report']
             final_data = {'run_accession': self.accession, 'sample_accession': run_data['sampleId'], 'instrument_model':run_data['instrumentModel']}
-            print("{} private data returned from ENA".format(self.accession))
+            logging.info("{} private data returned from ENA".format(self.accession))
             return final_data
         else:
-            print("{} public data returned from ENA".format(self.accession))
+            logging.info("{} public data returned from ENA".format(self.accession))
             return run
 
     def build_query(self):

@@ -1,9 +1,9 @@
 - name: study_xmls test_correct_args
   tags:
     - study_xmls
-  command: study_xmls --study ERP125469 --library metagenome --center EMG --tpa
+  command: study_xmls --study ERP125469 --library metagenome --center EMG --tpa --publication 1234
   files:
     - path: "ERP125469_upload/ERP125469_submission.xml"
-      md5sum: f4ed8cfcbe0e6f59fa114b581c0aafad
+      md5sum: bdae52720209d2e70e2911c650a64901
     - path: "ERP125469_upload/ERP125469_reg.xml"
       md5sum: e19433b768552ffce4765ec1c78f0938
