@@ -18,13 +18,11 @@ import json
 import logging
 import os
 import sys
-
-import requests
 import xml.dom.minidom as minidom
-
 from time import sleep
 from xml.parsers.expat import ExpatError
 
+import requests
 
 logging.basicConfig(level=logging.INFO)
 
