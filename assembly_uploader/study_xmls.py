@@ -29,14 +29,22 @@ METATRANSCRIPTOME = "metatranscriptome"
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(description="Study XML generation")
-    parser.add_argument("--study", help="raw reads study ID", required=True)
+    parser.add_argument(
+        "--study", 
+        help="raw reads study ID", 
+        required=True
+    )
     parser.add_argument(
         "--library",
         help="Library ",
         choices=["metagenome", "metatranscriptome"],
         required=True,
     )
-    parser.add_argument("--center", help="center for upload e.g. EMG", required=True)
+    parser.add_argument(
+        "--center", 
+        help="center for upload e.g. EMG", 
+        required=True
+    )
     parser.add_argument(
         "--hold",
         help="hold date (private) if it should be different from the provided study in "
@@ -56,7 +64,18 @@ def parse_args(argv):
         type=int,
         required=False,
     )
-    parser.add_argument("--output-dir", help="Path to output directory", required=False)
+    parser.add_argument(
+        "--output-dir", 
+        help="Path to output directory", 
+        required=False
+    )
+    parser.add_argument(
+        "--private", 
+        help="use flag if private", 
+        required=False, 
+        default=False, 
+        action='store_true'
+    )
     return parser.parse_args(argv)
 
 
@@ -70,6 +89,7 @@ class StudyXMLGenerator:
         tpa: bool = False,
         output_dir: Path = None,
         publication: int = None,
+        private: bool = False,
     ):
         f"""
         Build submission files for an assembly study.
@@ -81,6 +101,7 @@ class StudyXMLGenerator:
         :param tpa: is this a third-party assembly?
         :param output_dir: path to output directory (default is CWD)
         :param publication: pubmed ID for connected publication if available
+        :param private: is this a private study?
         :return: StudyXMLGenerator object
         """
         self.study = study
@@ -102,8 +123,9 @@ class StudyXMLGenerator:
         self.library = library
         self.tpa = tpa
         self.publication = publication
+        self.private = private
 
-        ena_query = EnaQuery(self.study)
+        ena_query = EnaQuery(self.study, self.private)
         self.study_obj = ena_query.build_query()
 
         self._title = None
@@ -147,7 +169,7 @@ class StudyXMLGenerator:
                 project_link = ET.SubElement(project_links, "PROJECT_LINK")
                 xref_link = ET.SubElement(project_link, "XREF_LINK")
                 ET.SubElement(xref_link, "DB").text = "PUBMED"
-                ET.SubElement(xref_link, "ID").text = self.publication
+                ET.SubElement(xref_link, "ID").text = str(self.publication)
 
             # project attributes: TPA and assembly type
             project_attributes = ET.SubElement(project, "PROJECT_ATTRIBUTES")
@@ -212,6 +234,7 @@ def main():
         tpa=args.tpa,
         output_dir=Path(args.output_dir) if args.output_dir else None,
         publication=args.publication,
+        private=args.private
     )
     study_reg.write_study_xml()
     study_reg.write_submission_xml()

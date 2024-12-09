@@ -45,9 +45,14 @@ def parse_args(argv):
     parser = argparse.ArgumentParser(
         description="Generate manifests for assembly uploads"
     )
-    parser.add_argument("--study", help="raw reads study ID", required=True)
     parser.add_argument(
-        "--data", help="metadata CSV - run_id, coverage, assembler, version, filepath"
+        "--study", 
+        help="raw reads study ID", 
+        required=True
+    )
+    parser.add_argument(
+        "--data", 
+        help="metadata CSV - run_id, coverage, assembler, version, filepath"
     )
     parser.add_argument(
         "--assembly_study",
@@ -61,7 +66,18 @@ def parse_args(argv):
         required=False,
         action="store_true",
     )
-    parser.add_argument("--output-dir", help="Path to output directory", required=False)
+    parser.add_argument(
+        "--output-dir", 
+        help="Path to output directory", 
+        required=False
+    )
+    parser.add_argument(
+        "--private", 
+        help="use flag if private", 
+        required=False, 
+        default=False, 
+        action='store_true'
+    )
     return parser.parse_args(argv)
 
 
@@ -73,6 +89,7 @@ class AssemblyManifestGenerator:
         assemblies_csv: Path,
         output_dir: Path = None,
         force: bool = False,
+        private: bool = False
     ):
         """
         Create an assembly manifest file for uploading assemblies detailed in assemblies_csv into the assembly_study.
@@ -81,6 +98,7 @@ class AssemblyManifestGenerator:
         :param assemblies_csv: path to assemblies CSV file, listing run_id, coverage, assembler, version, filepath of each assembly
         :param output_dir: path to output directory, otherwise CWD
         :param force: overwrite existing manifests
+        :param private: is this a private study?
         """
         self.study = study
         self.metadata = parse_info(assemblies_csv)
@@ -90,6 +108,7 @@ class AssemblyManifestGenerator:
         self.upload_dir.mkdir(exist_ok=True, parents=True)
 
         self.force = force
+        self.private = private
 
     def generate_manifest(
         self,
@@ -145,7 +164,7 @@ class AssemblyManifestGenerator:
 
     def write_manifests(self):
         for row in self.metadata:
-            ena_query = EnaQuery(row["Run"])
+            ena_query = EnaQuery(row["Run"], self.private)
             ena_metadata = ena_query.build_query()
             self.generate_manifest(
                 row["Run"],
@@ -169,6 +188,7 @@ def main():
         assembly_study=args.assembly_study,
         assemblies_csv=args.data,
         force=args.force,
+        private=args.private 
     )
     gen_manifest.write_manifests()
     logging.info("Completed")
@@ -176,3 +196,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+

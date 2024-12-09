@@ -1,7 +1,7 @@
 - name: assembly_manifest test_correct_args
   tags:
     - assembly_manifest
-  command: assembly_manifest --study SRP272267 --data tests/fixtures/test_metadata --assembly_study PRJ1
+  command: assembly_manifest --study ERP125469 --data tests/fixtures/test_metadata --assembly_study PRJ1
   files:
-    - path: "SRP272267_upload/SRR12240187.manifest"
-      md5sum: 60fcde08185b31a84389fb83b77f081d
+    - path: "ERP125469_upload/ERR4918394.manifest"
+      md5sum: 790c16e99b5a646b1a7d580d968b5079
