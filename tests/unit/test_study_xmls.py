@@ -11,7 +11,6 @@ def test_study_xmls(tmp_path, study_reg_xml_content, study_submission_xml_conten
             {
                 "study_accession": "PRJEB41657",
                 "study_title": "HoloFood Salmon Trial A+B Gut Metagenome",
-                "study_description": "Metagenomic raw reads, assemblies, and bins derived from HoloFood salmon gut samples from trial A and B. The samples in this project contributed to the salmon MAG catalogue (project: PRJEB55376 [ERP140265])",
                 "first_public": "2022-08-02",
             }
         ],

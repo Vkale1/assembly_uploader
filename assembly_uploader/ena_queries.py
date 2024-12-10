@@ -18,9 +18,7 @@ import json
 import logging
 import os
 import sys
-import xml.dom.minidom as minidom
 from time import sleep
-from xml.parsers.expat import ExpatError
 
 import requests
 
@@ -93,60 +91,49 @@ class EnaQuery:
                 )
             )
 
-    def get_study(
-        self,
-    ):
+    def get_study(self, attempt=0):
         if not self.private:
             data = {
                 "result": "study",
                 "query": f'{self.acc_type}="{self.accession}"',
-                "fields": "study_accession,study_title,study_description,first_public",
+                "fields": "study_accession,study_title,first_public",
                 "format": "json",
             }
-            data["dataPortal"] = "ena"
-            try:
-                response = self.post_request(data)
-                if response.status_code == 204:
-                    raise NoDataException()
-                final_data = self.check_api_error(response)
-                return final_data
-            finally:
-                logging.info("{} public data returned from ENA".format(self.accession))
-
+            response = self.post_request(data)
         else:
-            #   get text based fields from reports API and reformat to match public portal API
-            url = (
-                f"https://www.ebi.ac.uk/ena/submit/report/studies/xml/{self.accession}"
-            )
-            try:
-                xml_response = requests.get(url, auth=self.auth)
-                manifestXml = minidom.parseString(xml_response.text)
-                study_title = manifestXml.getElementsByTagName("STUDY_TITLE")[
-                    0
-                ].firstChild.nodeValue
-                study_desc = manifestXml.getElementsByTagName("STUDY_DESCRIPTION")[
-                    0
-                ].firstChild.nodeValue
-                final_data = {
-                    "study_accession": self.accession,
-                    "study_description": study_desc,
-                    "study_title": study_title,
-                }
-            except ExpatError as e:
-                logging.error(f"XML parsing failed: {e}")
-            except requests.RequestException as e:
-                logging.error(f"HTTP request failed: {e}")
-
-            #   get hold date from submissions API and reformat to match public portal API
             url = f"{self.private_url}studies/{self.accession}"
             response = self.get_request(url)
-            study = json.loads(response.text)[0]
+
+        if response.status_code == 204:
+            if attempt < 2:
+                attempt += 1
+                sleep(1)
+                return self.get_study(self, attempt)
+            else:
+                raise ValueError(
+                    "Could not find study {} in ENA after {} attempts".format(
+                        self.accession, RETRY_COUNT
+                    )
+                )
+        study = self.check_api_error(response)
+        if study is None:
+            logging.error(
+                f"private study {self.accession} is not present in the specified Webin account"
+            )
+
+        if self.private:
             study_data = study["report"]
-            #   remove time and keep date
-            first_public = study_data["firstPublic"].split("T")[0]
-            final_data["first_public"] = first_public
-            logging.info("{} private data returned from ENA".format(self.accession))
+            final_data = {
+                "study_accession": study_data["secondaryId"],
+                "study_title": study_data["title"],
+                #   remove time and keep date
+                "first_public": study_data["firstPublic"].split("T")[0],
+            }
+            logging.info("{} private study returned from ENA".format(self.accession))
             return final_data
+        else:
+            logging.info("{} public study returned from ENA".format(self.accession))
+            return study
 
     def get_run(self, attempt=0):
         if not self.private:
@@ -185,10 +172,10 @@ class EnaQuery:
                 "sample_accession": run_data["sampleId"],
                 "instrument_model": run_data["instrumentModel"],
             }
-            logging.info("{} private data returned from ENA".format(self.accession))
+            logging.info("{} private run returned from ENA".format(self.accession))
             return final_data
         else:
-            logging.info("{} public data returned from ENA".format(self.accession))
+            logging.info("{} public run returned from ENA".format(self.accession))
             return run
 
     def build_query(self):
