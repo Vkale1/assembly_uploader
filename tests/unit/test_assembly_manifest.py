@@ -22,6 +22,7 @@ def test_assembly_manifest(assemblies_metadata, tmp_path, run_manifest_content):
         assembly_study="PRJ1",
         assemblies_csv=assemblies_metadata,
         output_dir=tmp_path,
+        tpa=True,
     )
     assembly_manifest_gen.write_manifests()
 
