@@ -44,3 +44,31 @@ def run_manifest(study_submission_xml_dir):
 def run_manifest_content(run_manifest):
     with run_manifest.open() as f:
         return f.readlines()
+
+
+@pytest.fixture
+def run_public():
+    return {
+        "run_accession": "ERR4918394",
+        "sample_accession": "SAMEA7687881",
+        "instrument_model": "DNBSEQ-G400",
+    }
+
+
+#   the sample is different for private - reports API returns primary sample
+@pytest.fixture
+def run_private():
+    return {
+        "run_accession": "ERR4918394",
+        "sample_accession": "ERS5444411",
+        "instrument_model": "DNBSEQ-G400",
+    }
+
+
+@pytest.fixture
+def study_data():
+    return {
+        "study_accession": "PRJEB41657",
+        "study_title": "HoloFood Salmon Trial A+B Gut Metagenome",
+        "first_public": "2022-08-02",
+    }
