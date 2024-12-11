@@ -21,10 +21,11 @@ import sys
 from time import sleep
 
 import requests
+from requests.exceptions import ConnectionError, HTTPError, RequestException, Timeout
 
 logging.basicConfig(level=logging.INFO)
 
-RETRY_COUNT = 5
+RETRY_COUNT = 3
 
 
 class NoDataException(ValueError):
@@ -78,109 +79,111 @@ class EnaQuery:
         response = requests.get(url, auth=self.auth)
         return response
 
-    def check_api_error(self, response):
+    def get_data_or_handle_error(self, response):
         try:
             data = json.loads(response.text)[0]
-            return data
+            if data is None:
+                if self.private:
+                    logging.error(
+                        f"{self.accession} private data is not present in the specified Webin account"
+                    )
+                else:
+                    logging.error(f"{self.accession} public data does not exist")
+            else:
+                return data
         except NoDataException:
-            logging.error("Could not find {} in ENA".format(self.accession))
+            logging.error(f"Could not find {self.accession} in ENA")
         except (IndexError, TypeError, ValueError, KeyError):
             logging.error(
-                "Failed to fetch {}, returned error: {}.".format(
-                    self.accession, response.text
-                )
+                f"Failed to fetch {self.accession}, returned error: {response.text}"
             )
 
-    def get_study(self, attempt=0):
-        if not self.private:
-            data = {
-                "result": "study",
-                "query": f'{self.acc_type}="{self.accession}"',
-                "fields": "study_accession,study_title,first_public",
-                "format": "json",
-            }
-            response = self.post_request(data)
-        else:
-            url = f"{self.private_url}studies/{self.accession}"
-            response = self.get_request(url)
-
-        if response.status_code == 204:
-            if attempt < 2:
+    def retry_or_handle_request_error(self, request, *args, **kwargs):
+        attempt = 0
+        while attempt < RETRY_COUNT:
+            try:
+                response = request(*args, **kwargs)
+                response.raise_for_status()
+                return response
+            #   all other RequestExceptions are raised below
+            except (Timeout, ConnectionError) as retry_err:
                 attempt += 1
-                sleep(1)
-                return self.get_study(self, attempt)
-            else:
-                raise ValueError(
-                    "Could not find study {} in ENA after {} attempts".format(
-                        self.accession, RETRY_COUNT
+                if attempt > RETRY_COUNT:
+                    raise ValueError(
+                        f"Could not find {self.accession} in ENA after {RETRY_COUNT} attempts. Error: {retry_err}"
                     )
-                )
-        study = self.check_api_error(response)
-        if study is None:
-            logging.error(
-                f"private study {self.accession} is not present in the specified Webin account"
-            )
-
-        if self.private:
-            study_data = study["report"]
-            final_data = {
-                "study_accession": study_data["secondaryId"],
-                "study_title": study_data["title"],
-                #   remove time and keep date
-                "first_public": study_data["firstPublic"].split("T")[0],
-            }
-            logging.info("{} private study returned from ENA".format(self.accession))
-            return final_data
-        else:
-            logging.info("{} public study returned from ENA".format(self.accession))
-            return study
-
-    def get_run(self, attempt=0):
-        if not self.private:
-            data = {
-                "result": "read_run",
-                "query": f'run_accession="{self.accession}"',
-                "fields": "run_accession,sample_accession,instrument_model",
-                "format": "json",
-            }
-            response = self.post_request(data)
-        else:
-            url = f"{self.private_url}runs/{self.accession}"
-            response = self.get_request(url)
-
-        if response.status_code == 204:
-            if attempt < 2:
-                attempt += 1
                 sleep(1)
-                return self.get_run(self, attempt)
-            else:
-                raise ValueError(
-                    "Could not find run {} in ENA after {} attempts".format(
-                        self.accession, RETRY_COUNT
-                    )
-                )
-        run = self.check_api_error(response)
-        if run is None:
-            logging.error(
-                f"private run {self.accession} is not present in the specified Webin account"
-            )
+            except HTTPError as http_err:
+                print(f"HTTP response has an error status: {http_err}")
+                raise
+            except RequestException as req_err:
+                print(f"Network-related error status: {req_err}")
+                raise
+            #   should hopefully encompass all other issues...
+            except Exception as e:
+                print(f"An unexpected error occurred: {e}")
+                raise
 
-        if self.private:
-            run_data = run["report"]
-            final_data = {
-                "run_accession": self.accession,
-                "sample_accession": run_data["sampleId"],
-                "instrument_model": run_data["instrumentModel"],
-            }
-            logging.info("{} private run returned from ENA".format(self.accession))
-            return final_data
-        else:
-            logging.info("{} public run returned from ENA".format(self.accession))
-            return run
+    def _get_private_study(self):
+        url = f"{self.private_url}studies/{self.accession}"
+        response = self.retry_or_handle_request_error(self.get_request, url)
+        study = self.get_data_or_handle_error(response)
+        study_data = study["report"]
+        reformatted_data = {
+            "study_accession": study_data["secondaryId"],
+            "study_title": study_data["title"],
+            #   remove time and keep date
+            "first_public": study_data["firstPublic"].split("T")[0],
+        }
+        logging.info(f"{self.accession} private study returned from ENA")
+        return reformatted_data
+
+    def _get_public_study(self):
+        data = {
+            "result": "study",
+            "query": f'{self.acc_type}="{self.accession}"',
+            "fields": "study_accession,study_title,first_public",
+            "format": "json",
+        }
+        response = self.retry_or_handle_request_error(self.post_request, data)
+        study = self.get_data_or_handle_error(response)
+        logging.info(f"{self.accession} public study returned from ENA")
+        return study
+
+    def _get_private_run(self):
+        url = f"{self.private_url}runs/{self.accession}"
+        response = self.retry_or_handle_request_error(self.get_request, url)
+        run = self.get_data_or_handle_error(response)
+        run_data = run["report"]
+        reformatted_data = {
+            "run_accession": self.accession,
+            "sample_accession": run_data["sampleId"],
+            "instrument_model": run_data["instrumentModel"],
+        }
+        logging.info(f"{self.accession} private run returned from ENA")
+        return reformatted_data
+
+    def _get_public_run(self):
+        data = {
+            "result": "read_run",
+            "query": f'run_accession="{self.accession}"',
+            "fields": "run_accession,sample_accession,instrument_model",
+            "format": "json",
+        }
+        response = self.retry_or_handle_request_error(self.post_request, data)
+        run = self.get_data_or_handle_error(response)
+        logging.info(f"{self.accession} public run returned from ENA")
+        return run
 
     def build_query(self):
         if "study" in self.acc_type:
-            ena_response = self.get_study()
+            if self.private:
+                ena_response = self._get_private_study()
+            else:
+                ena_response = self._get_public_study()
         elif "run" in self.acc_type:
-            ena_response = self.get_run()
+            if self.private:
+                ena_response = self._get_private_run()
+            else:
+                ena_response = self._get_public_run()
         return ena_response
