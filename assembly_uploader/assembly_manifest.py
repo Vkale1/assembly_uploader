@@ -69,6 +69,12 @@ def parse_args(argv):
         default=False,
         action="store_true",
     )
+    parser.add_argument(
+        "--tpa",
+        help="use this flag if the study a third party assembly. Default False",
+        action="store_true",
+        default=False,
+    )
     return parser.parse_args(argv)
 
 
@@ -81,6 +87,7 @@ class AssemblyManifestGenerator:
         output_dir: Path = None,
         force: bool = False,
         private: bool = False,
+        tpa: bool = False,
     ):
         """
         Create an assembly manifest file for uploading assemblies detailed in assemblies_csv into the assembly_study.
@@ -90,6 +97,8 @@ class AssemblyManifestGenerator:
         :param output_dir: path to output directory, otherwise CWD
         :param force: overwrite existing manifests
         :param private: is this a private study?
+        :param tpa: is this a third-party assembly?
+
         """
         self.study = study
         self.metadata = parse_info(assemblies_csv)
@@ -100,6 +109,7 @@ class AssemblyManifestGenerator:
 
         self.force = force
         self.private = private
+        self.tpa = tpa
 
     def generate_manifest(
         self,
@@ -145,7 +155,7 @@ class AssemblyManifestGenerator:
             ("PROGRAM", assembler),
             ("PLATFORM", sequencer),
             ("FASTA", assembly_path),
-            ("TPA", "true"),
+            ("TPA", str(self.tpa).lower()),
         )
         logging.info("Writing manifest file (.manifest) for " + run_id)
         with open(manifest_path, "w") as outfile:
@@ -180,6 +190,7 @@ def main():
         assemblies_csv=args.data,
         force=args.force,
         private=args.private,
+        tpa=args.tpa,
     )
     gen_manifest.write_manifests()
     logging.info("Completed")
