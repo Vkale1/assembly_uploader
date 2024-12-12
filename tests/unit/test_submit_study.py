@@ -29,7 +29,7 @@ def test_submit_study(study_submission_xml_dir, monkeypatch):
     ensure_webin_credentials_exist()
 
     new_study = submit_study(
-        "SRP272267", is_test=True, directory=study_submission_xml_dir
+        "ERP125469", is_test=True, directory=study_submission_xml_dir
     )
     assert ena_dropbox.call_count == 1
     assert new_study == "PRJEA1"
