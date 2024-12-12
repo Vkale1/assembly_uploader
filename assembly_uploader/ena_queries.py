@@ -94,7 +94,6 @@ class EnaQuery:
 
     def retry_or_handle_request_error(self, request, *args, **kwargs):
         attempt = 0
-        logging.info("I AM HERE")
         while attempt < RETRY_COUNT:
             try:
                 response = request(*args, **kwargs)
