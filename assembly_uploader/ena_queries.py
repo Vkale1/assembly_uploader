@@ -18,33 +18,14 @@ import json
 import logging
 import os
 import sys
+from time import sleep
 
 import requests
+from requests.exceptions import ConnectionError, HTTPError, RequestException, Timeout
 
 logging.basicConfig(level=logging.INFO)
 
-ENA_API_URL = os.environ.get(
-    "ENA_API_URL", "https://www.ebi.ac.uk/ena/portal/api/v2.0/search"
-)
-
-
-def build_data(accession, accession_type):
-    if "study" in accession_type:
-        data = {
-            "result": "study",
-            "query": f'{accession_type}="{accession}"',
-            "fields": "study_accession,study_title,study_description,first_public",
-            "format": "json",
-        }
-        return data
-    else:
-        data = {
-            "result": "read_run",
-            "query": f'run_accession="{accession}"',
-            "fields": "run_accession,sample_accession,instrument_model,instrument_platform",
-            "format": "json",
-        }
-        return data
+RETRY_COUNT = 3
 
 
 def get_default_connection_headers():
@@ -54,23 +35,6 @@ def get_default_connection_headers():
             "Accept": "*/*",
         }
     }
-
-
-def parse_response_error(response):
-    """ENA Portal API error response parser.
-    This wrapper will try to get the "message" content from the response data.
-    If that fails it will use the response.txt.
-    If the above fails, it will return "no_content_on_response".
-    """
-    message = response.json()[0] or "no_content_on_response"
-    try:
-        data = response.json()
-        if data:
-            return data[0].get("message", message)
-        else:
-            return message
-    except json.decoder.JSONDecodeError:
-        return message
 
 
 def parse_accession(accession):
@@ -86,36 +50,134 @@ def parse_accession(accession):
 
 
 class EnaQuery:
-    def __init__(self, accession, username=None, password=None):
-        self.url = ENA_API_URL
+    def __init__(self, accession, private=False):
+        self.private_url = "https://www.ebi.ac.uk/ena/submit/report/"
+        self.public_url = "https://www.ebi.ac.uk/ena/portal/api/search"
         self.accession = accession
         self.acc_type = parse_accession(accession)
-        username = username or os.getenv("ENA_WEBIN")
-        password = password or os.getenv("ENA_WEBIN_PASSWORD")
+        username = os.getenv("ENA_WEBIN")
+        password = os.getenv("ENA_WEBIN_PASSWORD")
+        if username is None or password is None:
+            logging.error("ENA_WEBIN and ENA_WEBIN_PASSWORD are not set")
         if username and password:
             self.auth = (username, password)
         else:
             self.auth = None
-        self.data = build_data(self.accession, self.acc_type)
+        self.private = private
 
-    def post_request(self):
-        if self.auth:
-            response = requests.post(
-                self.url,
-                data=self.data,
-                auth=self.auth,
-                **get_default_connection_headers(),
-            )
-        else:
-            logging.warning(
-                "Not authenticated, fetching public data... check ENA_WEBIN and ENA_WEBIN_PASSWORD are set in your "
-                "environment to access private data."
-            )
-            response = requests.post(
-                self.url, data=self.data, **get_default_connection_headers()
-            )
+    def post_request(self, data):
+        response = requests.post(
+            self.public_url, data=data, **get_default_connection_headers()
+        )
         return response
 
+    def get_request(self, url):
+        response = requests.get(url, auth=self.auth)
+        return response
+
+    def get_data_or_handle_error(self, response):
+        try:
+            data = json.loads(response.text)[0]
+            if data is None:
+                if self.private:
+                    logging.error(
+                        f"{self.accession} private data is not present in the specified Webin account"
+                    )
+                else:
+                    logging.error(f"{self.accession} public data does not exist")
+            else:
+                return data
+        except (IndexError, TypeError, ValueError, KeyError):
+            logging.error(
+                f"Failed to fetch {self.accession}, returned error: {response.text}"
+            )
+
+    def retry_or_handle_request_error(self, request, *args, **kwargs):
+        attempt = 0
+        while attempt < RETRY_COUNT:
+            try:
+                response = request(*args, **kwargs)
+                response.raise_for_status()
+                return response
+            #   all other RequestExceptions are raised below
+            except (Timeout, ConnectionError) as retry_err:
+                attempt += 1
+                if attempt >= RETRY_COUNT:
+                    raise ValueError(
+                        f"Could not find {self.accession} in ENA after {RETRY_COUNT} attempts. Error: {retry_err}"
+                    )
+                sleep(1)
+            except HTTPError as http_err:
+                print(f"HTTP response has an error status: {http_err}")
+                raise
+            except RequestException as req_err:
+                print(f"Network-related error status: {req_err}")
+                raise
+            #   should hopefully encompass all other issues...
+            except Exception as e:
+                print(f"An unexpected error occurred: {e}")
+                raise
+
+    def _get_private_study(self):
+        url = f"{self.private_url}studies/{self.accession}"
+        response = self.retry_or_handle_request_error(self.get_request, url)
+        study = self.get_data_or_handle_error(response)
+        study_data = study["report"]
+        reformatted_data = {
+            "study_accession": study_data["secondaryId"],
+            "study_title": study_data["title"],
+            #   remove time and keep date
+            "first_public": study_data["firstPublic"].split("T")[0],
+        }
+        logging.info(f"{self.accession} private study returned from ENA")
+        return reformatted_data
+
+    def _get_public_study(self):
+        data = {
+            "result": "study",
+            "query": f'{self.acc_type}="{self.accession}"',
+            "fields": "study_accession,study_title,first_public",
+            "format": "json",
+        }
+        response = self.retry_or_handle_request_error(self.post_request, data)
+        study = self.get_data_or_handle_error(response)
+        logging.info(f"{self.accession} public study returned from ENA")
+        return study
+
+    def _get_private_run(self):
+        url = f"{self.private_url}runs/{self.accession}"
+        response = self.retry_or_handle_request_error(self.get_request, url)
+        run = self.get_data_or_handle_error(response)
+        run_data = run["report"]
+        reformatted_data = {
+            "run_accession": self.accession,
+            "sample_accession": run_data["sampleId"],
+            "instrument_model": run_data["instrumentModel"],
+        }
+        logging.info(f"{self.accession} private run returned from ENA")
+        return reformatted_data
+
+    def _get_public_run(self):
+        data = {
+            "result": "read_run",
+            "query": f'run_accession="{self.accession}"',
+            "fields": "run_accession,sample_accession,instrument_model",
+            "format": "json",
+        }
+        response = self.retry_or_handle_request_error(self.post_request, data)
+        run = self.get_data_or_handle_error(response)
+        logging.info(f"{self.accession} public run returned from ENA")
+        return run
+
     def build_query(self):
-        ena_response = self.post_request()
-        return parse_response_error(ena_response)
+        if "study" in self.acc_type:
+            if self.private:
+                ena_response = self._get_private_study()
+            else:
+                ena_response = self._get_public_study()
+        elif "run" in self.acc_type:
+            if self.private:
+                ena_response = self._get_private_run()
+            else:
+                ena_response = self._get_public_run()
+        return ena_response

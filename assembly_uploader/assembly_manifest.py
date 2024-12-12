@@ -62,6 +62,19 @@ def parse_args(argv):
         action="store_true",
     )
     parser.add_argument("--output-dir", help="Path to output directory", required=False)
+    parser.add_argument(
+        "--private",
+        help="use flag if private",
+        required=False,
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--tpa",
+        help="use this flag if the study is a third party assembly. Default False",
+        action="store_true",
+        default=False,
+    )
     return parser.parse_args(argv)
 
 
@@ -73,6 +86,8 @@ class AssemblyManifestGenerator:
         assemblies_csv: Path,
         output_dir: Path = None,
         force: bool = False,
+        private: bool = False,
+        tpa: bool = False,
     ):
         """
         Create an assembly manifest file for uploading assemblies detailed in assemblies_csv into the assembly_study.
@@ -81,6 +96,9 @@ class AssemblyManifestGenerator:
         :param assemblies_csv: path to assemblies CSV file, listing run_id, coverage, assembler, version, filepath of each assembly
         :param output_dir: path to output directory, otherwise CWD
         :param force: overwrite existing manifests
+        :param private: is this a private study?
+        :param tpa: is this a third-party assembly?
+
         """
         self.study = study
         self.metadata = parse_info(assemblies_csv)
@@ -90,6 +108,8 @@ class AssemblyManifestGenerator:
         self.upload_dir.mkdir(exist_ok=True, parents=True)
 
         self.force = force
+        self.private = private
+        self.tpa = tpa
 
     def generate_manifest(
         self,
@@ -135,7 +155,7 @@ class AssemblyManifestGenerator:
             ("PROGRAM", assembler),
             ("PLATFORM", sequencer),
             ("FASTA", assembly_path),
-            ("TPA", "true"),
+            ("TPA", str(self.tpa).lower()),
         )
         logging.info("Writing manifest file (.manifest) for " + run_id)
         with open(manifest_path, "w") as outfile:
@@ -145,7 +165,7 @@ class AssemblyManifestGenerator:
 
     def write_manifests(self):
         for row in self.metadata:
-            ena_query = EnaQuery(row["Run"])
+            ena_query = EnaQuery(row["Run"], self.private)
             ena_metadata = ena_query.build_query()
             self.generate_manifest(
                 row["Run"],
@@ -169,6 +189,8 @@ def main():
         assembly_study=args.assembly_study,
         assemblies_csv=args.data,
         force=args.force,
+        private=args.private,
+        tpa=args.tpa,
     )
     gen_manifest.write_manifests()
     logging.info("Completed")
