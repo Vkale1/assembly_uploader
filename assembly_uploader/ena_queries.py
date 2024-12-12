@@ -28,10 +28,6 @@ logging.basicConfig(level=logging.INFO)
 RETRY_COUNT = 3
 
 
-class NoDataException(ValueError):
-    pass
-
-
 def get_default_connection_headers():
     return {
         "headers": {
@@ -91,8 +87,6 @@ class EnaQuery:
                     logging.error(f"{self.accession} public data does not exist")
             else:
                 return data
-        except NoDataException:
-            logging.error(f"Could not find {self.accession} in ENA")
         except (IndexError, TypeError, ValueError, KeyError):
             logging.error(
                 f"Failed to fetch {self.accession}, returned error: {response.text}"
@@ -100,6 +94,7 @@ class EnaQuery:
 
     def retry_or_handle_request_error(self, request, *args, **kwargs):
         attempt = 0
+        logging.info("I AM HERE")
         while attempt < RETRY_COUNT:
             try:
                 response = request(*args, **kwargs)
@@ -108,7 +103,7 @@ class EnaQuery:
             #   all other RequestExceptions are raised below
             except (Timeout, ConnectionError) as retry_err:
                 attempt += 1
-                if attempt > RETRY_COUNT:
+                if attempt >= RETRY_COUNT:
                     raise ValueError(
                         f"Could not find {self.accession} in ENA after {RETRY_COUNT} attempts. Error: {retry_err}"
                     )

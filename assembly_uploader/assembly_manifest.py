@@ -71,7 +71,7 @@ def parse_args(argv):
     )
     parser.add_argument(
         "--tpa",
-        help="use this flag if the study a third party assembly. Default False",
+        help="use this flag if the study is a third party assembly. Default False",
         action="store_true",
         default=False,
     )

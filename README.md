@@ -41,9 +41,10 @@ study_xmls
   --center CENTER       center for upload e.g. EMG
   --hold HOLD           hold date (private) if it should be different from the provided study in format dd-mm-yyyy. Will inherit the release date of the raw read study if not
                         provided.
-  --tpa                 use this flag if the study a third party assembly. Default False
+  --tpa                 use this flag if the study is a third party assembly. Default False
   --publication PUBLICATION
                         pubmed ID for connected publication if available
+  --private             use flag if your data is private
 ```
 
 #### Step 2: submit the new assembly study to ENA
@@ -67,6 +68,8 @@ assembly_manifest
   --assembly_study ASSEMBLY_STUDY
                         pre-existing study ID to submit to if available. Must exist in the webin account
   --force               overwrite all existing manifests
+  --private             use flag if your data is private
+  --tpa                 use this flag if the study is a third party assembly. Default False
 ```
 
 #### Step 4: upload assemblies

@@ -1,6 +1,9 @@
+import pytest
 import responses
+from requests.exceptions import ConnectionError, HTTPError
 
 from assembly_uploader.ena_queries import EnaQuery
+from assembly_uploader.webin_utils import ENA_WEBIN, ENA_WEBIN_PASSWORD
 
 
 def test_ena_query_study(study_data):
@@ -97,3 +100,43 @@ def test_ena_query_run(run_public, run_private):
 
     assert ena_run_private.build_query() == run_private
     assert ena_run_public.build_query() == run_public
+
+
+def test_ena_exceptions(monkeypatch):
+
+    monkeypatch.setenv(ENA_WEBIN, "fake-webin-999")
+    monkeypatch.setenv(ENA_WEBIN_PASSWORD, "fakewebinpw")
+
+    ena_query = EnaQuery(accession="ERP125469", private=True)
+
+    responses.add(
+        responses.GET,
+        "https://www.ebi.ac.uk/ena/submit/report/studies/ERP125469",
+        body=ConnectionError("Test retry error"),
+    )
+
+    with pytest.raises(
+        ValueError, match="Could not find ERP125469 in ENA after 3 attempts."
+    ):
+        ena_query.retry_or_handle_request_error(
+            request=ena_query.get_request,
+            url="https://www.ebi.ac.uk/ena/submit/report/studies/ERP125469",
+        )
+    assert responses.assert_call_count(
+        "https://www.ebi.ac.uk/ena/submit/report/studies/ERP125469", 3
+    )
+
+    responses.add(
+        responses.GET,
+        "https://www.ebi.ac.uk/ena/submit/report/studies/ERPXYZ",
+        body=HTTPError("Test failure error"),
+    )
+
+    with pytest.raises(HTTPError):
+        ena_query.retry_or_handle_request_error(
+            request=ena_query.get_request,
+            url="https://www.ebi.ac.uk/ena/submit/report/studies/ERPXYZ",
+        )
+    assert responses.assert_call_count(
+        "https://www.ebi.ac.uk/ena/submit/report/studies/ERPXYZ", 1
+    )
